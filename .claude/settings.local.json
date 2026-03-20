@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git config:*)",
+      "Bash(claude auth:*)",
+      "Bash(dir \"C:\\\\Users\\\\User\\\\Downloads\\\\electric2\")"
+    ]
+  }
+}

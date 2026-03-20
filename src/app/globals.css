@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #0a1628;
+  --bg-surface: #0d1f35;
+  --bg-card: #111e35;
+  --border: #1e3a5f;
+  --text-primary: #e0e0e0;
+  --text-muted: #78909c;
+  --accent: #4fc3f7;
+  --success: #4caf50;
+  --warning: #ffd54f;
+  --danger: #f44336;
+  --emergency: #ff6b35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: "Pretendard", "Inter", "Noto Sans KR", system-ui, sans-serif;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1f35;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e3a5f;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2a5080;
+}
+
+/* 숫자 입력 화살표 제거 */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 테이블 기본 스타일 */
+.data-table th {
+  @apply text-xs uppercase tracking-wider text-slate-400 font-medium py-2 px-3;
+}
+.data-table td {
+  @apply py-2 px-3 text-sm text-slate-200;
+}
+.data-table tr:hover td {
+  @apply bg-slate-800/40;
+}
+
+/* 입력 필드 공통 */
+.input-field {
+  @apply bg-slate-800 border border-slate-600 rounded-md px-3 py-1.5 text-slate-200 text-sm
+         focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30
+         placeholder:text-slate-500 transition-colors;
+}
+
+/* 버튼 공통 */
+.btn-primary {
+  @apply bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-md text-sm font-medium
+         transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+}
+.btn-secondary {
+  @apply bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-md text-sm
+         transition-colors border border-slate-600;
+}
+.btn-danger {
+  @apply bg-red-900/30 hover:bg-red-900/50 text-red-400 px-3 py-1.5 rounded-md text-sm
+         transition-colors border border-red-800/40;
+}
+.btn-icon {
+  @apply p-1.5 rounded hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors;
+}
+
+/* 카드 */
+.card {
+  @apply bg-slate-900 border border-slate-700/50 rounded-lg;
+}
+
+/* 배지 */
+.badge-ok {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+         bg-green-900/30 text-green-400 border border-green-800/40;
+}
+.badge-warning {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+         bg-amber-900/30 text-amber-400 border border-amber-800/40;
+}
+.badge-error {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+         bg-red-900/30 text-red-400 border border-red-800/40;
+}
+.badge-info {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium
+         bg-sky-900/30 text-sky-400 border border-sky-800/40;
+}
