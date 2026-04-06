@@ -1,0 +1,29 @@
+{
+  "name": "ship-electrical-design",
+  "version": "1.0.0",
+  "description": "선박 전장기본설계 자동화 프로그램",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "db:init": "node scripts/init-db.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.5.0"
+  },
+  "optionalDependencies": {
+    "@libsql/linux-x64-gnu": "^0.4.7"
+  }
+}

@@ -1,0 +1,31 @@
+# 의존성
+node_modules/
+
+# Next.js 빌드
+.next/
+out/
+
+# 환경변수 (절대 커밋 금지)
+.env
+.env.local
+.env.production.local
+.env.development.local
+
+# 로컬 SQLite DB (Turso 사용 시 불필요)
+local.db
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# 로그
+*.log
+npm-debug.log*
+
+# 타입스크립트 빌드 캐시
+tsconfig.tsbuildinfo
