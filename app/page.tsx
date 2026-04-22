@@ -320,6 +320,42 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* 프로젝트 목록 */}
+      <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
+        <h2 style={{fontSize:15,fontWeight:800,color:'var(--text)'}}>📁 프로젝트 목록</h2>
+        <button className="btn bp bsm" style={{marginLeft:'auto'}} onClick={()=>setShowNew(true)}>+ 새 프로젝트</button>
+      </div>
+
+      {loading ? (
+        <div className="empty"><div className="empty-icon">⏳</div>로딩 중...</div>
+      ) : (
+        <div className="proj-grid" style={{marginBottom:28}}>
+          <div className="new-card" onClick={()=>setShowNew(true)}>
+            <div className="new-card-icon">+</div>
+            <div className="new-card-txt">새 프로젝트 만들기</div>
+          </div>
+
+          {projects.map(p=>(
+            <div key={p.id} className="proj-card" onClick={()=>router.push(`/projects/${p.id}`)}>
+              <div className="proj-name">🚢 {p.vesselName}</div>
+              <div className="proj-info">{p.hullNo && `Hull No: ${p.hullNo}`}{p.projectNo && ` | ${p.projectNo}`}</div>
+              <div className="proj-meta">
+                <span className="bge norm-badge">{p.classCode}</span>
+                <span className="bge" style={{background:'#e3f2fd',color:'#1565c0'}}>{p.acVoltage}V {p.frequency}Hz</span>
+                {powerBadges(p).map(b=>(
+                  <span key={b.label} className="bge" style={{background:b.bg,color:b.color}}>{b.label}</span>
+                ))}
+                <span className="bge" style={{background:'#f5f5f5',color:'#546e7a'}}>{fmt(p.updatedAt)}</span>
+              </div>
+              <div className="proj-actions" onClick={e=>e.stopPropagation()}>
+                <button className="btn bp bsm" onClick={()=>router.push(`/projects/${p.id}`)}>▶ 열기</button>
+                <button className="btn bd bsm" onClick={()=>setDelId(p.id)}>🗑 삭제</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* 사용 설명서 */}
       <div style={{marginBottom:24}}>
         <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
@@ -451,41 +487,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 프로젝트 목록 */}
-      <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
-        <h2 style={{fontSize:15,fontWeight:800,color:'var(--text)'}}>📁 프로젝트 목록</h2>
-        <button className="btn bp bsm" style={{marginLeft:'auto'}} onClick={()=>setShowNew(true)}>+ 새 프로젝트</button>
-      </div>
-
-      {loading ? (
-        <div className="empty"><div className="empty-icon">⏳</div>로딩 중...</div>
-      ) : (
-        <div className="proj-grid">
-          <div className="new-card" onClick={()=>setShowNew(true)}>
-            <div className="new-card-icon">+</div>
-            <div className="new-card-txt">새 프로젝트 만들기</div>
-          </div>
-
-          {projects.map(p=>(
-            <div key={p.id} className="proj-card" onClick={()=>router.push(`/projects/${p.id}`)}>
-              <div className="proj-name">🚢 {p.vesselName}</div>
-              <div className="proj-info">{p.hullNo && `Hull No: ${p.hullNo}`}{p.projectNo && ` | ${p.projectNo}`}</div>
-              <div className="proj-meta">
-                <span className="bge norm-badge">{p.classCode}</span>
-                <span className="bge" style={{background:'#e3f2fd',color:'#1565c0'}}>{p.acVoltage}V {p.frequency}Hz</span>
-                {powerBadges(p).map(b=>(
-                  <span key={b.label} className="bge" style={{background:b.bg,color:b.color}}>{b.label}</span>
-                ))}
-                <span className="bge" style={{background:'#f5f5f5',color:'#546e7a'}}>{fmt(p.updatedAt)}</span>
-              </div>
-              <div className="proj-actions" onClick={e=>e.stopPropagation()}>
-                <button className="btn bp bsm" onClick={()=>router.push(`/projects/${p.id}`)}>▶ 열기</button>
-                <button className="btn bd bsm" onClick={()=>setDelId(p.id)}>🗑 삭제</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
 
     {/* 새 프로젝트 모달 */}
