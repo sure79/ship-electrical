@@ -27,13 +27,13 @@ interface NewProjectForm {
 }
 
 const NEW_PROJECT_POWER_OPTIONS = [
-  { key: 'hasDg', label: 'DG', color: '#1565c0', bg: '#e3f2fd' },
-  { key: 'hasEg', label: 'EG', color: '#b71c1c', bg: '#fce4ec' },
-  { key: 'hasEss', label: 'ESS', color: '#1b5e20', bg: '#e8f5e9' },
-  { key: 'hasFc', label: 'FC', color: '#4a148c', bg: '#f3e5f5' },
-  { key: 'hasPv', label: 'PV', color: '#e65100', bg: '#fff3e0' },
-  { key: 'hasShore', label: 'Shore', color: '#006064', bg: '#e0f7fa' },
-  { key: 'hasDc', label: 'DC', color: '#2e7d32', bg: '#e8f5e9' },
+  { key: 'hasDg',    label: 'DG',    name: '주발전기',   desc: '디젤발전기 (상시 전원)',        color: '#1565c0', bg: '#e3f2fd' },
+  { key: 'hasEg',    label: 'EG',    name: '비상발전기', desc: 'SOLAS 규정 / 45초 자동기동',    color: '#b71c1c', bg: '#fce4ec' },
+  { key: 'hasEss',   label: 'ESS',   name: '에너지저장', desc: '배터리 / 피크컷·백업 전원',     color: '#1b5e20', bg: '#e8f5e9' },
+  { key: 'hasFc',    label: 'FC',    name: '연료전지',   desc: 'Fuel Cell 스택',                color: '#4a148c', bg: '#f3e5f5' },
+  { key: 'hasPv',    label: 'PV',    name: '태양광',     desc: '태양광 패널 (kWp 설치)',        color: '#e65100', bg: '#fff3e0' },
+  { key: 'hasShore', label: 'Shore', name: '육전',       desc: '육상 외부전원 연결',            color: '#006064', bg: '#e0f7fa' },
+  { key: 'hasDc',    label: 'DC',    name: 'DC 버스',    desc: 'DC 배전 (추진/배터리 공통)',    color: '#2e7d32', bg: '#e8f5e9' },
 ] as const
 
 const MANUAL = [
@@ -534,15 +534,16 @@ export default function Dashboard() {
             </div>
             <div>
               <label>전원 구성</label>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
                 {NEW_PROJECT_POWER_OPTIONS.map(opt=>(
                   <label key={opt.key}
                     style={{
-                      display:'flex',alignItems:'center',gap:6,padding:'8px 10px',border:'1px solid var(--border)',
+                      display:'flex',alignItems:'flex-start',gap:8,padding:'10px 12px',border:'1px solid var(--border)',
                       borderRadius:8,cursor:'pointer',background:form[opt.key]?opt.bg:'#fff',color:form[opt.key]?opt.color:'var(--text)'
                     }}>
                     <input
                       type="checkbox"
+                      style={{marginTop:2}}
                       checked={form[opt.key]}
                       onChange={e=>setForm(f=>({
                         ...f,
@@ -552,7 +553,13 @@ export default function Dashboard() {
                           : {}),
                       }))}
                     />
-                    <span style={{fontSize:12,fontWeight:700}}>{opt.label}</span>
+                    <div style={{display:'flex',flexDirection:'column',gap:2,minWidth:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+                        <span style={{fontSize:12,fontWeight:800,letterSpacing:0.3}}>{opt.label}</span>
+                        <span style={{fontSize:12,fontWeight:700}}>{opt.name}</span>
+                      </div>
+                      <span style={{fontSize:11,color: form[opt.key] ? opt.color : 'var(--gray)',opacity:0.85}}>{opt.desc}</span>
+                    </div>
                   </label>
                 ))}
               </div>
