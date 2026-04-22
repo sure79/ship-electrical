@@ -13,6 +13,9 @@ function mapLoad(l: Record<string,unknown>) {
     dfSea: l.df_sea!==undefined ? Number(l.df_sea) : Number(l.demand_factor),
     dfWork:l.df_work!==undefined ? Number(l.df_work) : Number(l.demand_factor)*0.6,
     dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : (Boolean(l.is_emergency)?Number(l.demand_factor):0),
+    // 4-scenario: NULL이면 미입력 표시 (클라이언트에서 자동 계산된 기본값 사용)
+    dfArrival: l.df_arrival==null ? null : Number(l.df_arrival),
+    dfHarbor:  l.df_harbor ==null ? null : Number(l.df_harbor),
     phase:l.phase, isEmergency:Boolean(l.is_emergency), isBattery:Boolean(l.is_battery),
     cableLength:Number(l.cable_length)||0,
     location:l.location, notes:l.notes, sortOrder:Number(l.sort_order)
@@ -37,12 +40,16 @@ export async function POST(req:Request, {params}:Ctx) {
   const insertLoad = async(ld:Record<string,unknown>, ord:number) => {
     const id = uuid()
     const df = Number(ld.demandFactor)||Number(ld.demand_factor)||0.8
+    // dfArrival / dfHarbor: null 또는 숫자 전달 가능 (미입력 구분)
+    const dfArrival = ld.dfArrival==null || ld.dfArrival==='' ? null : Number(ld.dfArrival)
+    const dfHarbor  = ld.dfHarbor ==null || ld.dfHarbor ==='' ? null : Number(ld.dfHarbor)
     await db.execute({
       sql:`INSERT INTO loads
            (id,project_id,circuit_no,name,from_bus,to_tag,
             kw,pf,efficiency,priority,start_type,demand_factor,df_sea,df_work,df_emg,
+            df_arrival,df_harbor,
             phase,is_emergency,is_battery,cable_length,location,notes,sort_order)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       args:[
         id,params.projectId,String(ld.circuitNo||''),String(ld.name||''),String(ld.fromBus||'MSB'),String(ld.toTag||''),
         Number(ld.kw)||0,Number(ld.pf)||0.85,Number(ld.efficiency)||0.88,String(ld.priority||'IMPORTANT'),
@@ -50,6 +57,7 @@ export async function POST(req:Request, {params}:Ctx) {
         ld.dfSea!==undefined?Number(ld.dfSea):df,
         ld.dfWork!==undefined?Number(ld.dfWork):df*0.6,
         ld.dfEmg!==undefined?Number(ld.dfEmg):(ld.isEmergency?df:0),
+        dfArrival, dfHarbor,
         String(ld.phase||'3P'),
         ld.isEmergency?1:0, ld.isBattery?1:0,
         Number(ld.cableLength)||0,

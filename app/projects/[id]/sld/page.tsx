@@ -76,6 +76,8 @@ async function load(projectId: string) {
       dfSea: l.df_sea !== undefined ? Number(l.df_sea) : df,
       dfWork: l.df_work !== undefined ? Number(l.df_work) : df * 0.6,
       dfEmg: l.df_emg !== undefined ? Number(l.df_emg) : (Boolean(l.is_emergency) ? df : 0),
+      dfArrival: l.df_arrival == null ? null : Number(l.df_arrival),
+      dfHarbor:  l.df_harbor  == null ? null : Number(l.df_harbor),
       phase: String(l.phase) as Load['phase'],
       isEmergency: Boolean(l.is_emergency),
       isBattery: Boolean(l.is_battery),

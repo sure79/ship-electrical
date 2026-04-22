@@ -6,44 +6,55 @@
 import * as XLSX from 'xlsx'
 import type { Load } from './types'
 
-/** 부하 1행에 해당하는 Excel 컬럼 정의 */
+/** 부하 1행에 해당하는 Excel 컬럼 정의
+ *  운전조건별 수요율 5개 (항해/출입항/하역/정박/비상) 모두 직접 입력
+ */
 export const LOAD_COLUMNS = [
-  { key: 'circuitNo',    label: '회로번호',     example: 'P01',              width: 10 },
-  { key: 'name',         label: '부하명',       example: 'M/E C.S.W Pump',   width: 28 },
-  { key: 'fromBus',      label: '전원출처',     example: 'MSB',              width: 10 },
-  { key: 'toTag',        label: '부하태그',     example: 'CSW-1',            width: 14 },
-  { key: 'kw',           label: 'kW',           example: 15,                 width: 8 },
-  { key: 'pf',           label: '역률',         example: 0.85,               width: 7 },
-  { key: 'efficiency',   label: '효율',         example: 0.9,                width: 7 },
-  { key: 'startType',    label: '기동방식',     example: 'DOL',              width: 10 },
-  { key: 'phase',        label: '위상',         example: '3P',               width: 7 },
-  { key: 'dfSea',        label: '항해수요율',   example: 0.8,                width: 10 },
-  { key: 'dfWork',       label: '작업수요율',   example: 0.48,               width: 10 },
-  { key: 'dfEmg',        label: '비상수요율',   example: 0,                  width: 10 },
-  { key: 'priority',     label: '우선순위',     example: 'IMPORTANT',        width: 12 },
-  { key: 'isEmergency',  label: '비상부하',     example: 'N',                width: 8 },
-  { key: 'isBattery',    label: '배터리공급',   example: 'N',                width: 10 },
-  { key: 'cableLength',  label: '케이블길이(m)', example: 20,                width: 12 },
-  { key: 'location',     label: '위치',         example: 'E/R',              width: 10 },
-  { key: 'notes',        label: '비고',         example: '',                 width: 20 },
+  { key: 'circuitNo',    label: '회로번호',       example: 'P01',              width: 10 },
+  { key: 'name',         label: '부하명',         example: 'M/E C.S.W Pump',   width: 28 },
+  { key: 'fromBus',      label: '전원출처',       example: 'MSB',              width: 10 },
+  { key: 'toTag',        label: '부하태그',       example: 'CSW-1',            width: 14 },
+  { key: 'kw',           label: 'kW',             example: 15,                 width: 8 },
+  { key: 'pf',           label: '역률',           example: 0.85,               width: 7 },
+  { key: 'efficiency',   label: '효율',           example: 0.9,                width: 7 },
+  { key: 'startType',    label: '기동방식',       example: 'DOL',              width: 10 },
+  { key: 'phase',        label: '위상',           example: '3P',               width: 7 },
+  { key: 'dfSea',        label: '항해수요율',     example: 1.0,                width: 11 },
+  { key: 'dfArrival',    label: '출입항수요율',   example: 0.8,                width: 12 },
+  { key: 'dfWork',       label: '하역수요율',     example: 0.5,                width: 11 },
+  { key: 'dfHarbor',     label: '정박수요율',     example: 0.3,                width: 11 },
+  { key: 'dfEmg',        label: '비상수요율',     example: 0,                  width: 11 },
+  { key: 'priority',     label: '우선순위',       example: 'IMPORTANT',        width: 12 },
+  { key: 'isEmergency',  label: '비상부하',       example: 'N',                width: 8 },
+  { key: 'isBattery',    label: '배터리공급',     example: 'N',                width: 10 },
+  { key: 'cableLength',  label: '케이블길이(m)',   example: 20,                width: 12 },
+  { key: 'location',     label: '위치',           example: 'E/R',              width: 10 },
+  { key: 'notes',        label: '비고',           example: '',                 width: 20 },
 ] as const
 
 type ColKey = typeof LOAD_COLUMNS[number]['key']
 
-/** 샘플 행 (보고서 이미지의 케미컬탱커 사례 기반) */
+/** 샘플 행 (보고서 이미지의 케미컬탱커 사례 기반)
+ *  각 부하마다 4가지 운전조건(항해/출입항/하역/정박) + 비상 수요율을 직접 지정
+ */
 const SAMPLE_ROWS: Array<Partial<Record<ColKey, string | number>>> = [
-  { circuitNo: 'P01', name: 'M/E C.S.W Pump',          fromBus: 'MSB', toTag: 'CSW-1', kw: 15,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfWork: 0.6, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 20,  location: 'E/R', notes: '' },
-  { circuitNo: 'P02', name: 'M/E L.O Pump',            fromBus: 'MSB', toTag: 'LO-1',  kw: 11,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfWork: 0.6, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 20,  location: 'E/R', notes: '' },
-  { circuitNo: 'P03', name: 'M/E L/F C.F.W Pump',      fromBus: 'MSB', toTag: 'CFW-1', kw: 7.5,  pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfWork: 0.6, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 18,  location: 'E/R', notes: '' },
-  { circuitNo: 'P04', name: 'M/E Aux. Blower',         fromBus: 'MSB', toTag: 'BLW-1', kw: 30,   pf: 0.85, efficiency: 0.88, startType: 'Y-D', phase: '3P', dfSea: 0.8, dfWork: 0.3, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 25,  location: 'E/R', notes: '' },
-  { circuitNo: 'P05', name: 'Engine Room Fan',         fromBus: 'MSB', toTag: 'ERF-1', kw: 22,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfWork: 0.8, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 25,  location: 'E/R', notes: '' },
-  { circuitNo: 'P06', name: 'Windlass Hydraulic Pump', fromBus: 'MSB', toTag: 'WND-1', kw: 55,   pf: 0.85, efficiency: 0.9,  startType: 'Y-D', phase: '3P', dfSea: 0.0, dfWork: 0.9, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 40,  location: 'Bow',  notes: '출입항' },
-  { circuitNo: 'P07', name: 'Mooring Winch Pump',      fromBus: 'MSB', toTag: 'MRG-1', kw: 45,   pf: 0.85, efficiency: 0.9,  startType: 'Y-D', phase: '3P', dfSea: 0.0, dfWork: 0.9, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 38,  location: 'Stern', notes: '출입항' },
-  { circuitNo: 'P08', name: 'Cargo Feeding Crane',     fromBus: 'MSB', toTag: 'CRN-1', kw: 110,  pf: 0.85, efficiency: 0.9,  startType: 'VFD', phase: '3P', dfSea: 0.0, dfWork: 0.8, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 50,  location: 'Deck', notes: '하역' },
-  { circuitNo: 'P09', name: 'Ballast Pump',            fromBus: 'MSB', toTag: 'BLT-1', kw: 75,   pf: 0.85, efficiency: 0.9,  startType: 'VFD', phase: '3P', dfSea: 0.0, dfWork: 0.7, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 35,  location: 'E/R',  notes: '하역' },
-  { circuitNo: 'L01', name: 'Cargo Pump Room Lights',  fromBus: 'MSB', toTag: 'LGT-1', kw: 3.5,  pf: 0.95, efficiency: 0.95, startType: 'N/A', phase: '1P', dfSea: 0.5, dfWork: 1.0, dfEmg: 0,   priority: 'NON_ESSENTIAL',  isEmergency: 'N', isBattery: 'N', cableLength: 30,  location: 'Deck', notes: '' },
-  { circuitNo: 'E01', name: 'Emergency Lighting',      fromBus: 'ESB', toTag: 'EMG-L', kw: 5,    pf: 0.95, efficiency: 0.95, startType: 'N/A', phase: '1P', dfSea: 1.0, dfWork: 1.0, dfEmg: 1.0, priority: 'ESSENTIAL',      isEmergency: 'Y', isBattery: 'N', cableLength: 40,  location: 'Ship', notes: 'SOLAS' },
-  { circuitNo: 'E02', name: 'Emergency Fire Pump',     fromBus: 'ESB', toTag: 'FP-1',  kw: 37,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 0.0, dfWork: 0.0, dfEmg: 1.0, priority: 'ESSENTIAL',      isEmergency: 'Y', isBattery: 'N', cableLength: 30,  location: 'E/R',  notes: 'SOLAS' },
+  // 주기관/보조기 (항해·출입항 상시, 정박 부분 가동)
+  { circuitNo: 'P01', name: 'M/E C.S.W Pump',          fromBus: 'MSB', toTag: 'CSW-1', kw: 15,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfArrival: 1.0, dfWork: 0.6, dfHarbor: 0.3, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 20,  location: 'E/R', notes: '' },
+  { circuitNo: 'P02', name: 'M/E L.O Pump',            fromBus: 'MSB', toTag: 'LO-1',  kw: 11,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfArrival: 1.0, dfWork: 0.6, dfHarbor: 0.2, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 20,  location: 'E/R', notes: '' },
+  { circuitNo: 'P03', name: 'M/E L/F C.F.W Pump',      fromBus: 'MSB', toTag: 'CFW-1', kw: 7.5,  pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfArrival: 1.0, dfWork: 0.6, dfHarbor: 0.2, dfEmg: 0,   priority: 'ESSENTIAL',      isEmergency: 'N', isBattery: 'N', cableLength: 18,  location: 'E/R', notes: '' },
+  { circuitNo: 'P04', name: 'M/E Aux. Blower',         fromBus: 'MSB', toTag: 'BLW-1', kw: 30,   pf: 0.85, efficiency: 0.88, startType: 'Y-D', phase: '3P', dfSea: 0.8, dfArrival: 0.9, dfWork: 0.3, dfHarbor: 0.0, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 25,  location: 'E/R', notes: '' },
+  { circuitNo: 'P05', name: 'Engine Room Fan',         fromBus: 'MSB', toTag: 'ERF-1', kw: 22,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 1.0, dfArrival: 1.0, dfWork: 0.8, dfHarbor: 0.4, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 25,  location: 'E/R', notes: '' },
+  // 계류장치 (출입항 전용)
+  { circuitNo: 'P06', name: 'Windlass Hydraulic Pump', fromBus: 'MSB', toTag: 'WND-1', kw: 55,   pf: 0.85, efficiency: 0.9,  startType: 'Y-D', phase: '3P', dfSea: 0.0, dfArrival: 0.9, dfWork: 0.0, dfHarbor: 0.0, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 40,  location: 'Bow',  notes: '출입항 전용' },
+  { circuitNo: 'P07', name: 'Mooring Winch Pump',      fromBus: 'MSB', toTag: 'MRG-1', kw: 45,   pf: 0.85, efficiency: 0.9,  startType: 'Y-D', phase: '3P', dfSea: 0.0, dfArrival: 0.9, dfWork: 0.0, dfHarbor: 0.0, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 38,  location: 'Stern', notes: '출입항 전용' },
+  // 하역장치 (하역 전용)
+  { circuitNo: 'P08', name: 'Cargo Feeding Crane',     fromBus: 'MSB', toTag: 'CRN-1', kw: 110,  pf: 0.85, efficiency: 0.9,  startType: 'VFD', phase: '3P', dfSea: 0.0, dfArrival: 0.0, dfWork: 0.8, dfHarbor: 0.0, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 50,  location: 'Deck', notes: '하역 전용' },
+  { circuitNo: 'P09', name: 'Ballast Pump',            fromBus: 'MSB', toTag: 'BLT-1', kw: 75,   pf: 0.85, efficiency: 0.9,  startType: 'VFD', phase: '3P', dfSea: 0.0, dfArrival: 0.1, dfWork: 0.7, dfHarbor: 0.0, dfEmg: 0,   priority: 'IMPORTANT',      isEmergency: 'N', isBattery: 'N', cableLength: 35,  location: 'E/R',  notes: '하역 위주' },
+  // 조명/일반 (전 조건 가동)
+  { circuitNo: 'L01', name: 'Cargo Pump Room Lights',  fromBus: 'MSB', toTag: 'LGT-1', kw: 3.5,  pf: 0.95, efficiency: 0.95, startType: 'N/A', phase: '1P', dfSea: 0.5, dfArrival: 0.7, dfWork: 1.0, dfHarbor: 0.6, dfEmg: 0,   priority: 'NON_ESSENTIAL',  isEmergency: 'N', isBattery: 'N', cableLength: 30,  location: 'Deck', notes: '' },
+  // 비상 부하 (SOLAS)
+  { circuitNo: 'E01', name: 'Emergency Lighting',      fromBus: 'ESB', toTag: 'EMG-L', kw: 5,    pf: 0.95, efficiency: 0.95, startType: 'N/A', phase: '1P', dfSea: 1.0, dfArrival: 1.0, dfWork: 1.0, dfHarbor: 1.0, dfEmg: 1.0, priority: 'ESSENTIAL',      isEmergency: 'Y', isBattery: 'N', cableLength: 40,  location: 'Ship', notes: 'SOLAS' },
+  { circuitNo: 'E02', name: 'Emergency Fire Pump',     fromBus: 'ESB', toTag: 'FP-1',  kw: 37,   pf: 0.85, efficiency: 0.88, startType: 'DOL', phase: '3P', dfSea: 0.0, dfArrival: 0.0, dfWork: 0.0, dfHarbor: 0.0, dfEmg: 1.0, priority: 'ESSENTIAL',      isEmergency: 'Y', isBattery: 'N', cableLength: 30,  location: 'E/R',  notes: 'SOLAS' },
 ]
 
 /** 템플릿 엑셀 파일 다운로드 */
@@ -67,11 +78,13 @@ export function downloadLoadTemplate() {
     ['kW',         '정격 출력 (숫자)'],
     ['역률',       '0.5 ~ 1.0 (일반 0.85)'],
     ['효율',       '0.5 ~ 1.0 (일반 0.88 ~ 0.92)'],
-    ['기동방식',   'DOL / Y-D / SSR / VFD / DC / N/A 중 하나'],
-    ['위상',       '3P / 1P / N/A 중 하나'],
-    ['항해수요율', '정상 항해 모드 수요율 (0 ~ 1)'],
-    ['작업수요율', '출입항/하역 모드 수요율 (0 ~ 1)'],
-    ['비상수요율', '비상 모드 수요율 (0 ~ 1)'],
+    ['기동방식',     'DOL / Y-D / SSR / VFD / DC / N/A 중 하나'],
+    ['위상',         '3P / 1P / N/A 중 하나'],
+    ['항해수요율',   '정상 항해 (Sea Going) 시 수요율 (0 ~ 1)'],
+    ['출입항수요율', '출입항 (Leaving & Arriving) 시 수요율 (0 ~ 1) — 계류장치 가동'],
+    ['하역수요율',   '하역 (Cargo Handling) 시 수요율 (0 ~ 1) — 화물 작업'],
+    ['정박수요율',   '정박 정박 (At Port) 시 수요율 (0 ~ 1) — 기관 정지, 조명 유지'],
+    ['비상수요율',   '비상 모드 (Emergency) 시 수요율 (0 ~ 1) — SOLAS'],
     ['우선순위',   'ESSENTIAL / IMPORTANT / NON_ESSENTIAL'],
     ['비상부하',   'Y / N — 비상발전기 공급 대상'],
     ['배터리공급', 'Y / N — ESS/배터리 공급 대상'],
@@ -124,7 +137,8 @@ export async function parseLoadFile(file: File): Promise<{ loads: ParsedLoad[]; 
     'CircuitNo': 'circuitNo', 'Name': 'name', 'FromBus': 'fromBus', 'ToTag': 'toTag',
     'kW': 'kw', 'PF': 'pf', 'Eff': 'efficiency',
     'StartType': 'startType', 'Phase': 'phase',
-    'DFsea': 'dfSea', 'DFwork': 'dfWork', 'DFemg': 'dfEmg',
+    'DFsea': 'dfSea', 'DFarrival': 'dfArrival', 'DFwork': 'dfWork', 'DFharbor': 'dfHarbor', 'DFemg': 'dfEmg',
+    'DFcargo': 'dfWork',   // 별칭: DFcargo 도 dfWork로 매핑
     'Priority': 'priority', 'Emergency': 'isEmergency', 'Battery': 'isBattery',
     'CableLen': 'cableLength', 'Location': 'location', 'Notes': 'notes',
   }
@@ -164,6 +178,9 @@ export async function parseLoadFile(file: File): Promise<{ loads: ParsedLoad[]; 
     const priority = (asStr(record.priority, 'IMPORTANT') as Load['priority'])
 
     const df = asNum(record.dfSea, 0.8)
+    // 출입항/정박 수요율: 셀이 비어있으면 null(미입력) 유지, 값 있으면 숫자 변환
+    const dfArrival = record.dfArrival != null && record.dfArrival !== '' ? asNum(record.dfArrival) : null
+    const dfHarbor  = record.dfHarbor  != null && record.dfHarbor  !== '' ? asNum(record.dfHarbor)  : null
     const load: ParsedLoad = {
       circuitNo: asStr(record.circuitNo) || `L${String(i).padStart(2, '0')}`,
       name,
@@ -177,7 +194,9 @@ export async function parseLoadFile(file: File): Promise<{ loads: ParsedLoad[]; 
       phase,
       demandFactor: df,
       dfSea: df,
+      dfArrival,
       dfWork: record.dfWork != null && record.dfWork !== '' ? asNum(record.dfWork) : df * 0.6,
+      dfHarbor,
       dfEmg: record.dfEmg != null && record.dfEmg !== '' ? asNum(record.dfEmg) : 0,
       isEmergency: asYN(record.isEmergency),
       isBattery: asYN(record.isBattery),

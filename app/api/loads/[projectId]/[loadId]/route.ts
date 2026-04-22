@@ -8,11 +8,14 @@ export async function PUT(req:Request, {params}:Ctx) {
   await initDb()
   const b = await req.json()
   const df = Number(b.demandFactor)||0.8
+  const dfArrival = b.dfArrival==null || b.dfArrival==='' ? null : Number(b.dfArrival)
+  const dfHarbor  = b.dfHarbor ==null || b.dfHarbor ==='' ? null : Number(b.dfHarbor)
   await db.execute({
     sql:`UPDATE loads SET
          circuit_no=?,name=?,from_bus=?,to_tag=?,
          kw=?,pf=?,efficiency=?,priority=?,start_type=?,
          demand_factor=?,df_sea=?,df_work=?,df_emg=?,
+         df_arrival=?,df_harbor=?,
          phase=?,is_emergency=?,is_battery=?,cable_length=?,
          location=?,notes=?,updated_at=datetime('now')
          WHERE id=? AND project_id=?`,
@@ -23,6 +26,7 @@ export async function PUT(req:Request, {params}:Ctx) {
       b.dfSea!==undefined?Number(b.dfSea):df,
       b.dfWork!==undefined?Number(b.dfWork):df*0.6,
       b.dfEmg!==undefined?Number(b.dfEmg):(b.isEmergency?df:0),
+      dfArrival, dfHarbor,
       b.phase,b.isEmergency?1:0,b.isBattery?1:0,
       Number(b.cableLength)||0,
       b.location,b.notes,

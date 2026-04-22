@@ -251,8 +251,11 @@ export default function ReportView({ report, projectId }: Props) {
           background: '#FAFAFA', border: '1px solid #E0E0E0', borderRadius: 6,
           fontSize: 11.5, color: '#555', lineHeight: 1.7,
         }}>
-          <b>평가 기준:</b> 부하율 ≥ 90% 위험, 85~90% 주의, 70~85% 관리 필요, 45~70% 안정적, 25~45% 경부하.
-          요구전력은 {'Σ'}(부하 kW × 수요율 / 효율)로 산정되며, 발전기 운전 대수는 부하율 ≤ 85% 를 만족하는 최소 대수로 자동 결정됨.
+          <b>평가 기준:</b> 부하율 ≥ 90% 위험, 85~90% 주의, 70~85% 관리 필요, 45~70% 안정적, 25~45% 경부하.<br/>
+          <b>요구전력 산정</b>: <code style={{ background:'#fff', padding:'1px 4px', border:'1px solid #ddd', borderRadius:3 }}>Σ (부하 kW × 수요율 / 효율)</code> —
+          각 부하의 수요율은 부하 입력 탭에서 사용자가 직접 지정한 값(항해/출입항/하역/정박)을 그대로 사용.
+          출입항·정박 수요율 미입력 시에는 항해 수요율(dfSea)로 폴백하며, 상단 카드의 <b>사용자 입력 수요율 %</b>로 신뢰도 확인 가능.<br/>
+          <b>발전기 대수</b>: 부하율 ≤ 85% 를 만족하는 최소 대수로 자동 선정 (범위: 1 ~ {report.genCount}대)
         </div>
       </Page>
 
@@ -261,7 +264,23 @@ export default function ReportView({ report, projectId }: Props) {
         <Header report={report} compact />
         <h2 style={h2}>3. 운영 리스크 및 개선 권고사항</h2>
         <div style={{ fontSize: 12, color: '#757575', marginBottom: 16 }}>
-          실제 운전 시 예상 리스크와 권고 조치
+          실제 운전 시 예상 리스크와 권고 조치 · 모든 분석은 사용자 입력값 + 표준 전기 공학 공식 기반
+        </div>
+
+        <div style={{
+          background: '#ECEFF1', border: '1px solid #B0BEC5', borderRadius: 6,
+          padding: '12px 16px', marginBottom: 20,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#263238', marginBottom: 6 }}>
+            📐 분석 방법론 (Methodology)
+          </div>
+          <div style={{ fontSize: 10.5, color: '#37474F', lineHeight: 1.7, fontFamily: 'Consolas, monospace' }}>
+            <div>· <b>요구전력 산정</b>: {report.methodology.formula}</div>
+            <div>· <b>발전기 선정</b>: {report.methodology.genSelectionRule}</div>
+            <div>· <b>평가 기준</b>: {report.methodology.verdictThresholds}</div>
+            <div>· <b>입력 데이터</b>: 사용자 등록 부하 {report.totalLoadsInput}개 · 발전기 {report.genSelKw}kW × {report.genCount}대 · PF {(report.genSelKw/(report.genSelKva||1)).toFixed(2)}</div>
+            <div>· <b>휴리스틱 없음</b>: 부하별 수요율은 전부 사용자 직접 입력 또는 명시된 폴백(dfSea)만 사용</div>
+          </div>
         </div>
 
         <h3 style={h3}>주요 운영 리스크</h3>
@@ -413,18 +432,29 @@ function ScenarioCard({ scenario: s, unitKw }: { scenario: ScenarioResult; unitK
       </div>
       {s.topLoads.length > 0 && (
         <div style={{ borderTop: `1px solid ${sc.light}`, padding: '10px 14px', background: '#FAFAFA' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#666', marginBottom: 6 }}>주요 부하 (상위 5)</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#666', marginBottom: 6 }}>
+            주요 부하 (상위 5) — 수요율 × kW 기준
+          </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             {s.topLoads.map(l => (
-              <div key={l.circuitNo} style={{ display: 'flex', fontSize: 10.5, color: '#424242' }}>
+              <div key={l.circuitNo} style={{ display: 'flex', gap: 6, fontSize: 10.5, color: '#424242' }}>
                 <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   <b style={{ color: sc.dark }}>{l.circuitNo}</b> {l.name}
                 </span>
+                <span style={{ fontFamily: 'Consolas, monospace', fontSize: 9.5, color: '#999', minWidth: 52, textAlign: 'right' }}>
+                  {l.kw.toFixed(1)}kW × {l.df.toFixed(2)}
+                </span>
                 <span style={{ fontFamily: 'Consolas, monospace', fontWeight: 700, color: sc.main, minWidth: 60, textAlign: 'right' }}>
-                  {l.demandKw.toFixed(1)} kW
+                  = {l.demandKw.toFixed(1)} kW
                 </span>
               </div>
             ))}
+          </div>
+          <div style={{ marginTop: 6, paddingTop: 6, borderTop: '1px dashed #E0E0E0', fontSize: 9.5, color: '#757575' }}>
+            사용자 입력 수요율: <b style={{ color: s.userInputCoveragePct >= 100 ? '#2E7D32' : s.userInputCoveragePct >= 50 ? '#F57C00' : '#C62828' }}>
+              {s.userInputCoveragePct.toFixed(1)}%
+            </b>
+            {s.userInputCoveragePct < 100 && ' (나머지는 항해 수요율 기반 폴백)'}
           </div>
         </div>
       )}
@@ -446,7 +476,7 @@ function RiskCard({ risk }: { risk: RiskItem }) {
         color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 800, flexShrink: 0,
       }}>{risk.id}</div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#212121' }}>{risk.title}</div>
           <span style={{
@@ -457,9 +487,19 @@ function RiskCard({ risk }: { risk: RiskItem }) {
         <div style={{ fontSize: 11.5, color: '#555', lineHeight: 1.6, marginBottom: 5 }}>
           {risk.description}
         </div>
-        <div style={{ fontSize: 10.5, color: '#C62828', lineHeight: 1.5 }}>
+        <div style={{ fontSize: 10.5, color: '#C62828', lineHeight: 1.5, marginBottom: 6 }}>
           <b>영향:</b> {risk.impact}
         </div>
+        {risk.evidence && risk.evidence.length > 0 && (
+          <div style={{
+            fontSize: 10, color: '#37474F', lineHeight: 1.55,
+            background: '#F5F7FA', padding: '6px 10px', borderRadius: 4,
+            fontFamily: 'Consolas, monospace',
+          }}>
+            <div style={{ fontWeight: 700, color: '#455A64', marginBottom: 2, fontFamily: 'inherit' }}>📐 계산 근거</div>
+            {risk.evidence.map((e, i) => <div key={i}>· {e}</div>)}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -473,13 +513,18 @@ function RecCard({ rec }: { rec: RecommendationItem }) {
       padding: '12px 14px', display: 'flex', gap: 12, alignItems: 'flex-start',
     }}>
       <div style={{ fontSize: 22 }}>{rec.icon}</div>
-      <div>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: '#1B5E20', marginBottom: 3 }}>
           {rec.id}. {rec.title}
         </div>
-        <div style={{ fontSize: 11, color: '#424242', lineHeight: 1.6 }}>
+        <div style={{ fontSize: 11, color: '#424242', lineHeight: 1.6, marginBottom: 6 }}>
           {rec.description}
         </div>
+        {rec.rationale && (
+          <div style={{ fontSize: 10, color: '#2E7D32', fontStyle: 'italic', lineHeight: 1.5, borderTop: '1px dashed #A5D6A7', paddingTop: 5 }}>
+            <b>근거:</b> {rec.rationale}
+          </div>
+        )}
       </div>
     </div>
   )

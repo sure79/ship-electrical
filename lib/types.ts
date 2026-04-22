@@ -58,11 +58,13 @@ export interface Load {
   kw: number; pf: number; efficiency: number
   priority: LoadPriority
   startType: 'DOL' | 'Y-D' | 'A-T' | 'SSR' | 'VFD' | 'DC' | 'N/A'
-  // 운전 모드별 수요율
-  demandFactor: number     // 기본값 (이전 버전 호환)
-  dfSea: number            // 항해 모드 수요율
-  dfWork: number           // 작업 모드 수요율
-  dfEmg: number            // 비상 모드 수요율
+  // 운전 모드별 수요율 (4가지 운전조건 + 비상)
+  demandFactor: number     // 기본값 (이전 버전 호환, = dfSea)
+  dfSea: number            // ① 정상 항해 (Sea Going)
+  dfArrival: number | null // ② 출입항 (Leaving & Arriving) — null=미입력
+  dfWork: number           // ③ 하역 (Cargo Handling) — 레거시 이름 유지
+  dfHarbor: number | null  // ④ 정박 정박 (At Port / Harbour) — null=미입력
+  dfEmg: number            // 비상 모드 수요율 (SOLAS)
   phase: '3P' | '1P' | 'N/A'
   isEmergency: boolean; isBattery: boolean
   cableLength: number      // 케이블 포설 길이 (m), 전압강하 계산용
