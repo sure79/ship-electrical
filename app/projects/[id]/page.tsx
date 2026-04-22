@@ -599,6 +599,53 @@ export default function ProjectPage() {
     a.click(); URL.revokeObjectURL(url)
   }
 
+  /** Excel 템플릿 다운로드 */
+  async function downloadExcelTemplate() {
+    const { downloadLoadTemplate } = await import('@/lib/excel')
+    downloadLoadTemplate()
+  }
+
+  /** Excel 업로드 → 부하 일괄 import */
+  async function handleExcelUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if(!file) return
+    const { parseLoadFile } = await import('@/lib/excel')
+    try {
+      const { loads: parsed, errors } = await parseLoadFile(file)
+      if(parsed.length === 0) {
+        alert('업로드된 파일에서 유효한 부하 데이터를 찾을 수 없습니다.\n헤더가 "회로번호, 부하명, 전원출처, ..." 로 시작해야 합니다.')
+        e.target.value = ''
+        return
+      }
+      const errMsg = errors.length ? `\n\n경고 (${errors.length}건):\n${errors.slice(0,5).join('\n')}${errors.length>5?`\n...외 ${errors.length-5}건`:''}` : ''
+      const replace = confirm(
+        `엑셀 파일에서 ${parsed.length}개의 부하를 불러왔습니다.${errMsg}\n\n` +
+        `[확인] 기존 부하를 모두 삭제하고 교체\n` +
+        `[취소] 기존 부하 유지하고 추가만 수행`
+      )
+      if(replace) {
+        for(const l of loads) await fetch(`/api/loads/${id}/${l.id}`,{method:'DELETE'})
+      }
+      const payload = parsed.map(({_row,_errors,...rest}) => rest)
+      const res = await fetch(`/api/loads/${id}?action=csv-import`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({loads: payload})
+      })
+      const data = await res.json()
+      if(!res.ok) throw new Error(data.error || '업로드 실패')
+      // 부하 목록 재로드
+      const r2 = await fetch(`/api/loads/${id}`)
+      const d2 = await r2.json()
+      setLoads(d2.loads || [])
+      alert(`✅ ${parsed.length}개 부하가 업로드되었습니다.`)
+    } catch(err) {
+      alert('엑셀 파싱 오류: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      e.target.value = ''
+    }
+  }
+
   function exportBusSummaryCsv() {
     if(!calcResult?.busSummaries?.length) return
     const hdr = 'Tag,Name,Parent,Type,Voltage,LoadCount,DemandKW,DemandKVA,EmergencyKW,BatteryKW,CurrentA'
@@ -1157,6 +1204,15 @@ export default function ProjectPage() {
           <button className="btn bsm"
             style={{background:'#fff3e0',color:'var(--orange)',border:'1px solid var(--orange3)'}}
             onClick={loadSample}>📦 샘플 (청항선 H-1041)</button>
+          <div style={{display:'inline-flex',gap:0,border:'1px solid #00897b',borderRadius:6,overflow:'hidden'}}>
+            <button className="btn bsm" style={{background:'#e0f2f1',color:'#00695c',border:'none',borderRight:'1px solid #00897b',borderRadius:0}} onClick={downloadExcelTemplate}>
+              📑 엑셀 템플릿
+            </button>
+            <label className="btn bsm" style={{background:'#00897b',color:'#fff',border:'none',borderRadius:0,cursor:'pointer',margin:0}}>
+              ⬆ 엑셀 업로드
+              <input type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={handleExcelUpload} />
+            </label>
+          </div>
           <button className="btn bg2 bsm" onClick={exportCsv}>⬇ CSV</button>
           <button className="btn bsm" style={{background:'#f0f4ff',color:'#1565c0',border:'1px solid #90caf9'}} onClick={()=>applyScenarioPreset('harbor')}>항내 프리셋</button>
           <button className="btn bsm" style={{background:'#f0f4ff',color:'#1565c0',border:'1px solid #90caf9'}} onClick={()=>applyScenarioPreset('maneuvering')}>출입항 프리셋</button>
@@ -1743,6 +1799,24 @@ export default function ProjectPage() {
           <>
           <div className="sbar ok" style={{marginBottom:12}}>
             ✅ 통합 전력 분석 완료 | 전원 역할, 트립 위험, 권장 장비/회로 구성 반영
+          </div>
+
+          {/* Electric Load Balance 보고서 진입 카드 */}
+          <div className="card" style={{background:'linear-gradient(135deg,#1565C0,#0D47A1)',color:'#FFF',border:'none',marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:14}}>
+              <div style={{fontSize:32}}>📊</div>
+              <div style={{flex:1}}>
+                <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Electric Load Balance 운영성 검토 보고서</div>
+                <div style={{fontSize:11.5,opacity:0.9,lineHeight:1.5}}>
+                  4가지 운전조건(정상 항해/출입항/하역/정박 정박)별 요구전력·부하율·리스크 자동 분석
+                  <br/>케미컬탱커 ELA 보고서 포맷 · 인쇄/PDF 출력 가능
+                </div>
+              </div>
+              <a href={`/projects/${id}/report`} target="_blank" rel="noreferrer"
+                style={{background:'#FFEB3B',color:'#263238',padding:'10px 20px',borderRadius:6,fontSize:14,fontWeight:800,textDecoration:'none',whiteSpace:'nowrap'}}>
+                보고서 열기 →
+              </a>
+            </div>
           </div>
 
           <div className="sbar info" style={{marginBottom:12}}>
