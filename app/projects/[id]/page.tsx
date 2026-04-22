@@ -2288,8 +2288,19 @@ export default function ProjectPage() {
           </div>
         ) : (
           <>
+          <div className="card" style={{background:'linear-gradient(135deg,#263238,#37474F)',color:'#ECEFF1',border:'none'}}>
+            <div className="card-title" style={{color:'#ECEFF1'}}>🆕 웹 전용 다이어그램 뷰어 (SVG · A3)</div>
+            <div style={{fontSize:12,color:'#B0BEC5',marginBottom:12}}>
+              IEC 60617 심볼 · KR 선급 표제란 · Zoom/Pan · SVG/PNG/PDF 내보내기. draw.io 없이 웹에서 바로 확인/인쇄 가능합니다.
+            </div>
+            <a href={`/projects/${id}/sld`} target="_blank" rel="noreferrer"
+              style={{display:'inline-flex',alignItems:'center',gap:6,background:'#00BCD4',color:'#263238',padding:'10px 20px',borderRadius:6,fontSize:14,fontWeight:800,textDecoration:'none'}}>
+              🗺️ 다이어그램 뷰어 열기 →
+            </a>
+          </div>
+
           <div className="card">
-            <div className="card-title">🗺️ draw.io SLD 자동 생성 완료</div>
+            <div className="card-title">🗺️ draw.io SLD 자동 생성 완료 (레거시)</div>
             <div className="sbar ok" style={{marginBottom:12}}>
               ✅ IEC 60617 + KR 선급 심볼 기준 | {systemDesc}
             </div>
