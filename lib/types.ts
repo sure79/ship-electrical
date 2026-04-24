@@ -6,6 +6,9 @@
 export type OperatingMode = 'SEA' | 'ARRIVAL' | 'WORK' | 'HARBOR' | 'EMG'
 export type LoadPriority = 'ESSENTIAL' | 'IMPORTANT' | 'NON_ESSENTIAL'
 
+/** 부하 운전 유형 — IACS/KR ELA 표준 */
+export type LoadKindElaType = 'continuous' | 'intermittent' | 'standby' | 'emergency'
+
 export interface Project {
   id: string; vesselName: string; hullNo: string; projectNo: string
   classCode: string; acVoltage: number; frequency: number
@@ -22,6 +25,23 @@ export interface Project {
   // ── 발전기 설정 ──
   dgCount: number; dgPf: number; designMargin: number
   dgXd: number         // 발전기 과도 리액턴스 X"d (pu, 기본 0.15)
+
+  // ── 발전기 정격 (ELA 검토용, 선택 입력) ──
+  dgKvaRated: number          // 1대당 정격 kVA (0=runCalculation 자동산정값 사용)
+  egKvaRated: number          // 비상발전기 1대 정격 kVA (0=자동)
+  egPf: number                // 비상발전기 역률 (기본 0.8)
+
+  // ── ELA 운전조건별 발전기 운전 대수 (사용자 지정) ──
+  runCountSea: number          // 정상 항해 시 발전기 운전 대수
+  runCountArrival: number      // 출입항 시
+  runCountCargo: number        // 하역 시
+  runCountHarbor: number       // 항내 정박 시
+
+  // ── ELA Diversity Factor (운전조건별, 간헐부하에만 적용) ──
+  divFactorSea: number         // 기본 1.8
+  divFactorArrival: number
+  divFactorCargo: number
+  divFactorHarbor: number
 
   // ── ESS 공통 ──
   essBackupH: number; essMargin: number
@@ -69,6 +89,13 @@ export interface Load {
   isEmergency: boolean; isBattery: boolean
   cableLength: number      // 케이블 포설 길이 (m), 전압강하 계산용
   location: string; notes: string; sortOrder: number
+
+  // ── ELA 확장 필드 (IACS/KR Electric Load Balance) ──
+  loadKind: LoadKindElaType       // continuous / intermittent / standby / emergency
+  quantity: number                 // 동일 장비 수량 (기본 1)
+  startingMultiplier: number       // 기동전류 배수 (DOL=6, Y-D=2.5, SS=3, VFD=1.5, N/A=1)
+  isSheddable: boolean             // Load Shedding 가능 여부
+  shedPriority: number             // 차단 우선순위 (1=최우선, 0=미지정)
 }
 
 export interface LoadCalc extends Load {

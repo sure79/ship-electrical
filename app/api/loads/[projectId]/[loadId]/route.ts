@@ -17,7 +17,9 @@ export async function PUT(req:Request, {params}:Ctx) {
          demand_factor=?,df_sea=?,df_work=?,df_emg=?,
          df_arrival=?,df_harbor=?,
          phase=?,is_emergency=?,is_battery=?,cable_length=?,
-         location=?,notes=?,updated_at=datetime('now')
+         location=?,notes=?,
+         load_kind=?,quantity=?,starting_multiplier=?,is_sheddable=?,shed_priority=?,
+         updated_at=datetime('now')
          WHERE id=? AND project_id=?`,
     args:[
       b.circuitNo,b.name,b.fromBus,b.toTag,
@@ -30,6 +32,11 @@ export async function PUT(req:Request, {params}:Ctx) {
       b.phase,b.isEmergency?1:0,b.isBattery?1:0,
       Number(b.cableLength)||0,
       b.location,b.notes,
+      String(b.loadKind||'continuous'),
+      Number(b.quantity)||1,
+      Number(b.startingMultiplier)||1,
+      b.isSheddable?1:0,
+      Number(b.shedPriority)||0,
       params.loadId,params.projectId
     ]
   })

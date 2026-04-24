@@ -140,6 +140,24 @@ export async function initDb() {
     `ALTER TABLE projects ADD COLUMN ess_peak_thresh_pct REAL NOT NULL DEFAULT 75`,
     `ALTER TABLE projects ADD COLUMN ess_peak_dur_min REAL NOT NULL DEFAULT 15`,
     `ALTER TABLE projects ADD COLUMN ess_spin_reserve INTEGER NOT NULL DEFAULT 0`,
+
+    // ── ELA 확장 (2026-04-24) ──
+    `ALTER TABLE loads ADD COLUMN load_kind TEXT NOT NULL DEFAULT 'continuous'`,
+    `ALTER TABLE loads ADD COLUMN quantity INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE loads ADD COLUMN starting_multiplier REAL NOT NULL DEFAULT 1`,
+    `ALTER TABLE loads ADD COLUMN is_sheddable INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE loads ADD COLUMN shed_priority INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE projects ADD COLUMN dg_kva_rated REAL NOT NULL DEFAULT 0`,
+    `ALTER TABLE projects ADD COLUMN eg_kva_rated REAL NOT NULL DEFAULT 0`,
+    `ALTER TABLE projects ADD COLUMN eg_pf REAL NOT NULL DEFAULT 0.8`,
+    `ALTER TABLE projects ADD COLUMN run_count_sea INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE projects ADD COLUMN run_count_arrival INTEGER NOT NULL DEFAULT 2`,
+    `ALTER TABLE projects ADD COLUMN run_count_cargo INTEGER NOT NULL DEFAULT 2`,
+    `ALTER TABLE projects ADD COLUMN run_count_harbor INTEGER NOT NULL DEFAULT 1`,
+    `ALTER TABLE projects ADD COLUMN div_factor_sea REAL NOT NULL DEFAULT 1.8`,
+    `ALTER TABLE projects ADD COLUMN div_factor_arrival REAL NOT NULL DEFAULT 1.8`,
+    `ALTER TABLE projects ADD COLUMN div_factor_cargo REAL NOT NULL DEFAULT 1.8`,
+    `ALTER TABLE projects ADD COLUMN div_factor_harbor REAL NOT NULL DEFAULT 1.8`,
   ]
   for(const sql of migrations) {
     try { await client.execute(sql) } catch { /* 이미 존재 시 무시 */ }

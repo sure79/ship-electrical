@@ -31,6 +31,18 @@ function mapProject(p: Record<string,unknown>) {
     chargeHours:Number(p.charge_hours)||6,
     fcStackKw:Number(p.fc_stack_kw)||0,
     pvKwp:Number(p.pv_kwp)||0, pvSunHours:Number(p.pv_sun_hours)||4,
+    // ELA 확장
+    dgKvaRated: Number(p.dg_kva_rated) || 0,
+    egKvaRated: Number(p.eg_kva_rated) || 0,
+    egPf:       Number(p.eg_pf) || 0.8,
+    runCountSea:      Number(p.run_count_sea)      || 1,
+    runCountArrival:  Number(p.run_count_arrival)  || 2,
+    runCountCargo:    Number(p.run_count_cargo)    || 2,
+    runCountHarbor:   Number(p.run_count_harbor)   || 1,
+    divFactorSea:     Number(p.div_factor_sea)     || 1.8,
+    divFactorArrival: Number(p.div_factor_arrival) || 1.8,
+    divFactorCargo:   Number(p.div_factor_cargo)   || 1.8,
+    divFactorHarbor:  Number(p.div_factor_harbor)  || 1.8,
     createdAt:p.created_at, updatedAt:p.updated_at,
   }
 }
@@ -47,7 +59,13 @@ function mapLoad(l: Record<string,unknown>) {
     dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : 0,
     phase:l.phase, isEmergency:Boolean(l.is_emergency), isBattery:Boolean(l.is_battery),
     cableLength:Number(l.cable_length)||0,
-    location:l.location, notes:l.notes, sortOrder:Number(l.sort_order)
+    location:l.location, notes:l.notes, sortOrder:Number(l.sort_order),
+    // ELA 확장
+    loadKind: String(l.load_kind || 'continuous'),
+    quantity: Number(l.quantity) || 1,
+    startingMultiplier: Number(l.starting_multiplier) || 1,
+    isSheddable: Boolean(l.is_sheddable),
+    shedPriority: Number(l.shed_priority) || 0,
   }
 }
 
@@ -88,6 +106,9 @@ export async function PUT(req:Request, {params}:Ctx) {
          dc_voltage=?,motor_count=?,motor_kw=?,iso_kva=?,prop_pf=?,
          operation_hours=?,charge_hours=?,fc_stack_kw=?,
          pv_kwp=?,pv_sun_hours=?,
+         dg_kva_rated=?,eg_kva_rated=?,eg_pf=?,
+         run_count_sea=?,run_count_arrival=?,run_count_cargo=?,run_count_harbor=?,
+         div_factor_sea=?,div_factor_arrival=?,div_factor_cargo=?,div_factor_harbor=?,
          updated_at=datetime('now') WHERE id=?`,
     args:[
       b.vesselName,b.hullNo,b.projectNo,b.classCode,
@@ -98,6 +119,9 @@ export async function PUT(req:Request, {params}:Ctx) {
       b.dcVoltage,b.motorCount,b.motorKw,b.isoKva,b.propPf||0.95,
       b.operationHours||8,b.chargeHours||6,b.fcStackKw||0,
       b.pvKwp||0,b.pvSunHours||4,
+      Number(b.dgKvaRated)||0, Number(b.egKvaRated)||0, Number(b.egPf)||0.8,
+      Number(b.runCountSea)||1, Number(b.runCountArrival)||2, Number(b.runCountCargo)||2, Number(b.runCountHarbor)||1,
+      Number(b.divFactorSea)||1.8, Number(b.divFactorArrival)||1.8, Number(b.divFactorCargo)||1.8, Number(b.divFactorHarbor)||1.8,
       params.id
     ]
   })

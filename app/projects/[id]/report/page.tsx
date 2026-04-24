@@ -4,6 +4,13 @@ export const dynamic = 'force-dynamic'
 import db, { initDb } from '@/lib/db'
 import { runCalculation } from '@/lib/calculations'
 import { generateLoadBalanceReport } from '@/lib/reportScenarios'
+import {
+  calculateElaAll,
+  calculateNMinusOne,
+  calculateLoadSheddingPlan,
+  calculateMotorStartingRisk,
+  collectWarnings,
+} from '@/lib/ela'
 import type { Project, Load, Bus } from '@/lib/types'
 import Link from 'next/link'
 import ReportView from './ReportView'
@@ -54,6 +61,17 @@ async function load(projectId: string) {
     essPeakThreshPct: Number(p.ess_peak_thresh_pct) || 75,
     essPeakDurMin: Number(p.ess_peak_dur_min) || 15,
     essSpinReserve: Boolean(p.ess_spin_reserve),
+    dgKvaRated: Number(p.dg_kva_rated) || 0,
+    egKvaRated: Number(p.eg_kva_rated) || 0,
+    egPf:       Number(p.eg_pf) || 0.8,
+    runCountSea:      Number(p.run_count_sea)      || 1,
+    runCountArrival:  Number(p.run_count_arrival)  || 2,
+    runCountCargo:    Number(p.run_count_cargo)    || 2,
+    runCountHarbor:   Number(p.run_count_harbor)   || 1,
+    divFactorSea:     Number(p.div_factor_sea)     || 1.8,
+    divFactorArrival: Number(p.div_factor_arrival) || 1.8,
+    divFactorCargo:   Number(p.div_factor_cargo)   || 1.8,
+    divFactorHarbor:  Number(p.div_factor_harbor)  || 1.8,
     createdAt: String(p.created_at),
     updatedAt: String(p.updated_at),
   }
@@ -79,6 +97,11 @@ async function load(projectId: string) {
       dfEmg: l.df_emg !== undefined ? Number(l.df_emg) : 0,
       dfArrival: l.df_arrival == null ? null : Number(l.df_arrival),
       dfHarbor:  l.df_harbor  == null ? null : Number(l.df_harbor),
+      loadKind: String(l.load_kind || 'continuous') as Load['loadKind'],
+      quantity: Number(l.quantity) || 1,
+      startingMultiplier: Number(l.starting_multiplier) || 1,
+      isSheddable: Boolean(l.is_sheddable),
+      shedPriority: Number(l.shed_priority) || 0,
       phase: String(l.phase) as Load['phase'],
       isEmergency: Boolean(l.is_emergency),
       isBattery: Boolean(l.is_battery),
@@ -105,7 +128,18 @@ async function load(projectId: string) {
 
   const result = runCalculation(project, loads, buses)
   const report = generateLoadBalanceReport(project, loads, result)
-  return { project, report, hasLoads: loads.length > 0 }
+
+  // 새 ELA 엔진 (IACS/KR 방식: continuous + intermittent / Diversity)
+  const ela = calculateElaAll(project, loads, result.selKw || 0)
+  const nMinusOne = ela.modes.map(m => calculateNMinusOne(m))
+  const shedding  = ela.modes.map((m, i) => calculateLoadSheddingPlan(m, nMinusOne[i].deficitKw))
+  const motorStarting = calculateMotorStartingRisk(project, loads, 'seaGoing', result.selKva || 0)
+  const warnings = collectWarnings(ela, nMinusOne, shedding, motorStarting, loads)
+
+  return {
+    project, report, hasLoads: loads.length > 0,
+    ela, nMinusOne, shedding, motorStarting, warnings,
+  }
 }
 
 export default async function ReportPage({ params }: { params: { id: string } }) {
@@ -134,5 +168,15 @@ export default async function ReportPage({ params }: { params: { id: string } })
     )
   }
 
-  return <ReportView report={data.report} projectId={params.id} />
+  return (
+    <ReportView
+      report={data.report}
+      projectId={params.id}
+      ela={data.ela}
+      nMinusOne={data.nMinusOne}
+      shedding={data.shedding}
+      motorStarting={data.motorStarting}
+      warnings={data.warnings}
+    />
+  )
 }

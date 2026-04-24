@@ -33,23 +33,23 @@ function suggestStartType(kw: number, name?: string): Load['startType'] {
 }
 
 const SAMPLE_LOADS: Omit<Load,'id'|'projectId'>[] = [
-  {circuitNo:'P01',name:'Fire & G/S Pump',fromBus:'MSB',toTag:'P-001',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.3,dfArrival:null,dfHarbor:null,dfEmg:0.5,phase:'3P',isEmergency:true,isBattery:false,cableLength:25,location:'Engine Room',notes:'비상겸용',sortOrder:1},
-  {circuitNo:'P02',name:'Fire & Bilge Pump',fromBus:'MSB',toTag:'P-002',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.3,dfWork:0.2,dfArrival:null,dfHarbor:null,dfEmg:0.3,phase:'3P',isEmergency:true,isBattery:false,cableLength:30,location:'Engine Room',notes:'비상겸용',sortOrder:2},
-  {circuitNo:'P03',name:'Air Compressor',fromBus:'MSB',toTag:'C-001',kw:2.2,pf:0.85,efficiency:0.88,priority:'IMPORTANT',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.3,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:20,location:'Engine Room',notes:'',sortOrder:3},
-  {circuitNo:'P04',name:'Macerator Pump',fromBus:'MSB',toTag:'P-003',kw:0.4,pf:0.80,efficiency:0.85,priority:'NON_ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.3,dfWork:0.2,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'1P',isEmergency:false,isBattery:false,cableLength:15,location:'Engine Room',notes:'',sortOrder:4},
-  {circuitNo:'P05',name:'Fresh Water Pump',fromBus:'MSB',toTag:'P-004',kw:0.6,pf:0.80,efficiency:0.85,priority:'IMPORTANT',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.4,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'1P',isEmergency:false,isBattery:false,cableLength:18,location:'Engine Room',notes:'',sortOrder:5},
-  {circuitNo:'P06',name:'Oil Boom Reel',fromBus:'MSB',toTag:'M-001',kw:5.0,pf:0.85,efficiency:0.90,priority:'NON_ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.0,dfWork:0.5,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:40,location:'Deck',notes:'',sortOrder:6},
-  {circuitNo:'P07',name:'Hydro Pack Motor',fromBus:'MSB',toTag:'M-002',kw:55.0,pf:0.85,efficiency:0.92,priority:'NON_ESSENTIAL',startType:'Y-D',demandFactor:0.4,dfSea:0.0,dfWork:0.6,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:35,location:'Engine Room',notes:'TR 220/440V',sortOrder:7},
-  {circuitNo:'N01',name:'항해통신패널(NCP)',fromBus:'MSB',toTag:'NCP-001',kw:3.0,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DOL',demandFactor:1.0,dfSea:1.0,dfWork:0.8,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:false,cableLength:60,location:'Bridge',notes:'',sortOrder:8},
-  {circuitNo:'L01',name:'전등패널(LDP)',fromBus:'MSB',toTag:'LDP-001',kw:5.0,pf:1.0,efficiency:1.0,priority:'IMPORTANT',startType:'DOL',demandFactor:0.8,dfSea:0.8,dfWork:0.7,dfArrival:null,dfHarbor:null,dfEmg:0.5,phase:'3P',isEmergency:false,isBattery:false,cableLength:50,location:'Various',notes:'',sortOrder:9},
-  {circuitNo:'C01',name:'배터리충방전(BCD)',fromBus:'ESS',toTag:'BCD-001',kw:2.0,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DC',demandFactor:1.0,dfSea:1.0,dfWork:1.0,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:true,cableLength:10,location:'Engine Room',notes:'ESS 공급',sortOrder:10},
-  {circuitNo:'F01',name:'화재탐지반(FAS)',fromBus:'MSB',toTag:'FAS-001',kw:0.5,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DOL',demandFactor:1.0,dfSea:1.0,dfWork:1.0,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:false,cableLength:55,location:'Bridge',notes:'내화케이블',sortOrder:11},
+  {circuitNo:'P01',name:'Fire & G/S Pump',fromBus:'MSB',toTag:'P-001',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.3,dfArrival:null,dfHarbor:null,dfEmg:0.5,phase:'3P',isEmergency:true,isBattery:false,cableLength:25,location:'Engine Room',notes:'비상겸용',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:1},
+  {circuitNo:'P02',name:'Fire & Bilge Pump',fromBus:'MSB',toTag:'P-002',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.3,dfWork:0.2,dfArrival:null,dfHarbor:null,dfEmg:0.3,phase:'3P',isEmergency:true,isBattery:false,cableLength:30,location:'Engine Room',notes:'비상겸용',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:2},
+  {circuitNo:'P03',name:'Air Compressor',fromBus:'MSB',toTag:'C-001',kw:2.2,pf:0.85,efficiency:0.88,priority:'IMPORTANT',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.3,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:20,location:'Engine Room',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:3},
+  {circuitNo:'P04',name:'Macerator Pump',fromBus:'MSB',toTag:'P-003',kw:0.4,pf:0.80,efficiency:0.85,priority:'NON_ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.3,dfWork:0.2,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'1P',isEmergency:false,isBattery:false,cableLength:15,location:'Engine Room',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:4},
+  {circuitNo:'P05',name:'Fresh Water Pump',fromBus:'MSB',toTag:'P-004',kw:0.6,pf:0.80,efficiency:0.85,priority:'IMPORTANT',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.4,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'1P',isEmergency:false,isBattery:false,cableLength:18,location:'Engine Room',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:5},
+  {circuitNo:'P06',name:'Oil Boom Reel',fromBus:'MSB',toTag:'M-001',kw:5.0,pf:0.85,efficiency:0.90,priority:'NON_ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.0,dfWork:0.5,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:40,location:'Deck',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:6},
+  {circuitNo:'P07',name:'Hydro Pack Motor',fromBus:'MSB',toTag:'M-002',kw:55.0,pf:0.85,efficiency:0.92,priority:'NON_ESSENTIAL',startType:'Y-D',demandFactor:0.4,dfSea:0.0,dfWork:0.6,dfArrival:null,dfHarbor:null,dfEmg:0.0,phase:'3P',isEmergency:false,isBattery:false,cableLength:35,location:'Engine Room',notes:'TR 220/440V',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:7},
+  {circuitNo:'N01',name:'항해통신패널(NCP)',fromBus:'MSB',toTag:'NCP-001',kw:3.0,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DOL',demandFactor:1.0,dfSea:1.0,dfWork:0.8,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:false,cableLength:60,location:'Bridge',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:8},
+  {circuitNo:'L01',name:'전등패널(LDP)',fromBus:'MSB',toTag:'LDP-001',kw:5.0,pf:1.0,efficiency:1.0,priority:'IMPORTANT',startType:'DOL',demandFactor:0.8,dfSea:0.8,dfWork:0.7,dfArrival:null,dfHarbor:null,dfEmg:0.5,phase:'3P',isEmergency:false,isBattery:false,cableLength:50,location:'Various',notes:'',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:9},
+  {circuitNo:'C01',name:'배터리충방전(BCD)',fromBus:'ESS',toTag:'BCD-001',kw:2.0,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DC',demandFactor:1.0,dfSea:1.0,dfWork:1.0,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:true,cableLength:10,location:'Engine Room',notes:'ESS 공급',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:10},
+  {circuitNo:'F01',name:'화재탐지반(FAS)',fromBus:'MSB',toTag:'FAS-001',kw:0.5,pf:1.0,efficiency:1.0,priority:'ESSENTIAL',startType:'DOL',demandFactor:1.0,dfSea:1.0,dfWork:1.0,dfArrival:null,dfHarbor:null,dfEmg:1.0,phase:'1P',isEmergency:true,isBattery:false,cableLength:55,location:'Bridge',notes:'내화케이블',loadKind:'continuous',quantity:1,startingMultiplier:1,isSheddable:false,shedPriority:0,sortOrder:11},
 ]
 
 const BEGINNER_LOAD_PACK: Omit<Load,'id'|'projectId'>[] = [
-  { circuitNo:'E01', name:'Emergency Lighting', fromBus:'ESB', toTag:'EL-001', kw:1.2, pf:1, efficiency:1, priority:'ESSENTIAL', startType:'N/A', demandFactor:1, dfSea:1, dfArrival:null, dfWork:1, dfHarbor:null, dfEmg:1, phase:'1P', isEmergency:true, isBattery:false, cableLength:45, location:'Accommodation', notes:'초보자 기본 템플릿', sortOrder:1 },
-  { circuitNo:'N02', name:'Nav/Com Console', fromBus:'NCP', toTag:'NAV-001', kw:2.5, pf:1, efficiency:1, priority:'ESSENTIAL', startType:'N/A', demandFactor:1, dfSea:1, dfArrival:null, dfWork:0.8, dfHarbor:null, dfEmg:1, phase:'1P', isEmergency:true, isBattery:false, cableLength:35, location:'Bridge', notes:'초보자 기본 템플릿', sortOrder:2 },
-  { circuitNo:'L02', name:'Accommodation Lighting', fromBus:'LDP', toTag:'LDP-002', kw:3.5, pf:1, efficiency:1, priority:'IMPORTANT', startType:'N/A', demandFactor:0.8, dfSea:0.8, dfArrival:null, dfWork:0.8, dfHarbor:null, dfEmg:0.5, phase:'3P', isEmergency:false, isBattery:false, cableLength:40, location:'Various', notes:'초보자 기본 템플릿', sortOrder:3 },
+  { circuitNo:'E01', name:'Emergency Lighting', fromBus:'ESB', toTag:'EL-001', kw:1.2, pf:1, efficiency:1, priority:'ESSENTIAL', startType:'N/A', demandFactor:1, dfSea:1, dfArrival:null, dfWork:1, dfHarbor:null, dfEmg:1, phase:'1P', isEmergency:true, isBattery:false, cableLength:45, location:'Accommodation', notes:'초보자 기본 템플릿', loadKind:'emergency', quantity:1, startingMultiplier:1, isSheddable:false, shedPriority:0, sortOrder:1 },
+  { circuitNo:'N02', name:'Nav/Com Console', fromBus:'NCP', toTag:'NAV-001', kw:2.5, pf:1, efficiency:1, priority:'ESSENTIAL', startType:'N/A', demandFactor:1, dfSea:1, dfArrival:null, dfWork:0.8, dfHarbor:null, dfEmg:1, phase:'1P', isEmergency:true, isBattery:false, cableLength:35, location:'Bridge', notes:'초보자 기본 템플릿', loadKind:'continuous', quantity:1, startingMultiplier:1, isSheddable:false, shedPriority:0, sortOrder:2 },
+  { circuitNo:'L02', name:'Accommodation Lighting', fromBus:'LDP', toTag:'LDP-002', kw:3.5, pf:1, efficiency:1, priority:'IMPORTANT', startType:'N/A', demandFactor:0.8, dfSea:0.8, dfArrival:null, dfWork:0.8, dfHarbor:null, dfEmg:0.5, phase:'3P', isEmergency:false, isBattery:false, cableLength:40, location:'Various', notes:'초보자 기본 템플릿', loadKind:'continuous', quantity:1, startingMultiplier:1, isSheddable:true, shedPriority:4, sortOrder:3 },
 ]
 
 type SaveState = 'saved'|'saving'|'error'|'idle'
@@ -385,6 +385,11 @@ export default function ProjectPage() {
       dfSea:df, dfArrival: null, dfWork:0, dfHarbor: null, dfEmg:0,
       phase:'3P' as Load['phase'],
       isEmergency:false,isBattery:false,cableLength:0,location:'',notes:'',
+      loadKind:'continuous' as Load['loadKind'],
+      quantity:1,
+      startingMultiplier:1,
+      isSheddable:false,
+      shedPriority:0,
       sortOrder:loads.length+1
     }
     const res = await fetch(`/api/loads/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
@@ -1119,6 +1124,99 @@ export default function ProjectPage() {
             + 버스/패널 추가
           </button>
         </div>
+
+        {/* ═══ ELA 발전기 & 운전조건 설정 ═══ */}
+        <div className="card" style={{marginTop:14,border:'2px solid #1B5E20'}}>
+          <div className="card-title" style={{color:'#1B5E20'}}>📊 ELA 발전기 · 운전조건 설정</div>
+          <div className="sbar info" style={{marginBottom:10,fontSize:11}}>
+            Electric Load Balance 보고서용. <b>정격 kVA</b>와 <b>운전조건별 발전기 운전 대수</b>·<b>Diversity Factor</b>를 지정하면
+            <a href={`/projects/${id}/report`} target="_blank" rel="noreferrer" style={{color:'#1565c0',marginLeft:4}}>보고서 페이지 →</a>
+            에서 IACS 방식 (연속 + 간헐/DF)으로 자동 계산됩니다.
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:14}}>
+            <div>
+              <label style={{fontSize:11,color:'#1B5E20',fontWeight:700}}>주발전기 정격 kVA (1대)</label>
+              <input type="number" value={project?.dgKvaRated||0} min={0} step={1}
+                onChange={e=>saveProject({dgKvaRated:+e.target.value||0})}
+                placeholder="0 = 자동 산정값 사용" />
+              <div style={{fontSize:10,color:'var(--gray)',marginTop:2}}>
+                {(project?.dgKvaRated||0) > 0
+                  ? `→ ${((project!.dgKvaRated) * (project!.dgPf||0.8)).toFixed(1)} kW × ${project?.dgCount}대 (PF ${project?.dgPf})`
+                  : '비워두면 부하 기반 자동 산정값을 사용'}
+              </div>
+            </div>
+            <div>
+              <label style={{fontSize:11,color:'#1B5E20',fontWeight:700}}>발전기 PF</label>
+              <input type="number" value={project?.dgPf||0.8} min={0.5} max={1} step={0.01}
+                onChange={e=>saveProject({dgPf:+e.target.value||0.8})} />
+            </div>
+            <div>
+              <label style={{fontSize:11,color:'#1B5E20',fontWeight:700}}>발전기 대수 (최대)</label>
+              <input type="number" value={project?.dgCount||3} min={1} max={8} step={1}
+                onChange={e=>saveProject({dgCount:+e.target.value||1})} />
+            </div>
+
+            <div>
+              <label style={{fontSize:11,color:'#b71c1c',fontWeight:700}}>비상 발전기 정격 kVA</label>
+              <input type="number" value={project?.egKvaRated||0} min={0} step={0.25}
+                onChange={e=>saveProject({egKvaRated:+e.target.value||0})}
+                placeholder="0 = 자동 산정값 사용" />
+            </div>
+            <div>
+              <label style={{fontSize:11,color:'#b71c1c',fontWeight:700}}>비상발전기 PF</label>
+              <input type="number" value={project?.egPf||0.8} min={0.5} max={1} step={0.01}
+                onChange={e=>saveProject({egPf:+e.target.value||0.8})} />
+            </div>
+            <div />
+          </div>
+
+          <div style={{fontSize:12,fontWeight:700,color:'#1B5E20',marginBottom:6,marginTop:8}}>
+            운전조건별 발전기 운전 대수 · Diversity Factor
+          </div>
+          <div className="tw" style={{marginBottom:4}}>
+            <table>
+              <thead>
+                <tr>
+                  <th style={{width:110,textAlign:'left'}}>운전 조건</th>
+                  <th style={{width:110}}>운전 발전기 대수</th>
+                  <th style={{width:110}}>Diversity Factor</th>
+                  <th style={{textAlign:'left'}}>설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                {([
+                  {key:'runCountSea',      divKey:'divFactorSea',      label:'🚢 정상 항해',   desc:'주기관/보조기 정상 운전'},
+                  {key:'runCountArrival',  divKey:'divFactorArrival',  label:'⚓ 출입항',       desc:'계류장치(윈들래스/무어링) 가동'},
+                  {key:'runCountCargo',    divKey:'divFactorCargo',    label:'📦 하역',         desc:'펌프/크레인 집중 가동'},
+                  {key:'runCountHarbor',   divKey:'divFactorHarbor',   label:'🏖️ 항내 정박',    desc:'기관 정지, 조명/통신 유지'},
+                ] as const).map(row=>(
+                  <tr key={row.key}>
+                    <td style={{fontWeight:700}}>{row.label}</td>
+                    <td>
+                      <input type="number"
+                        value={(project as unknown as Record<string,number>)?.[row.key] ?? 1}
+                        min={0} max={project?.dgCount||8} step={1}
+                        onChange={e=>saveProject({[row.key]: +e.target.value||1} as Partial<Project>)}
+                        style={{textAlign:'center'}} />
+                    </td>
+                    <td>
+                      <input type="number"
+                        value={(project as unknown as Record<string,number>)?.[row.divKey] ?? 1.8}
+                        min={1} max={5} step={0.1}
+                        onChange={e=>saveProject({[row.divKey]: +e.target.value||1.8} as Partial<Project>)}
+                        style={{textAlign:'center'}} />
+                    </td>
+                    <td style={{fontSize:11,color:'var(--gray)'}}>{row.desc}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{fontSize:10,color:'var(--gray)',marginTop:4}}>
+            💡 Diversity Factor는 <b>간헐 부하에만</b> 적용 (IACS ELA 방식). 기본값 1.8 권장.
+          </div>
+        </div>
         </>
       )}
 
@@ -1175,6 +1273,9 @@ export default function ProjectPage() {
                   <th style={{width:42}}>역률</th>
                   <th style={{width:42}}>효율</th>
                   <th style={{width:56}}>기동방식</th>
+                  <th style={{width:56}} title="ELA 유형: continuous(연속) / intermittent(간헐) / standby(대기) / emergency(비상)">유형</th>
+                  <th style={{width:38}} title="동일 장비 수량 (기본 1)">수량</th>
+                  <th style={{width:46}} title="기동전류 배수 (DOL 6 / Y-D 2.5 / SSR 3 / VFD 1.5)">기동배수</th>
                   <th style={{width:46}} title="정상 항해 수요율">항해</th>
                   <th style={{width:44}} title="출입항 수요율 (0~1) — 직접 입력, 빈칸은 0으로 계산">출입항</th>
                   <th style={{width:44}} title="하역 수요율 (0~1) — Cargo Handling 모드">하역</th>
@@ -1182,6 +1283,8 @@ export default function ProjectPage() {
                   <th style={{width:40}} title="비상 수요율 (SOLAS 모드)">비상</th>
                   <th style={{width:40}}>위상</th>
                   <th style={{width:58}} title="자동 부하차단 우선순위">우선순위</th>
+                  <th style={{width:36}} title="Load Shedding 대상 (N-1 부족 시 차단 가능)">차단</th>
+                  <th style={{width:44}} title="Shedding 우선순위 (1=최우선, 숫자↓=먼저 차단, 0=미지정)">차단순</th>
                   <th style={{width:40}} title="비상부하 여부">비상</th>
                   <th style={{width:40}} title="배터리/ESS 공급 여부">배터리</th>
                   <th style={{width:50}} title="케이블 길이(m)">케이블길이(m)</th>
@@ -1231,6 +1334,27 @@ export default function ProjectPage() {
                         style={l.startType==='N/A'?{color:'var(--gray)',fontStyle:'italic'}:{}}>
                         {START_TYPES.map(s=><option key={s} value={s}>{s==='N/A'?'N/A (해당없음)':s}</option>)}
                       </select>
+                    </td>
+                    {/* ── ELA: 유형 / 수량 / 기동배수 ─────── */}
+                    <td>
+                      <select value={l.loadKind||'continuous'}
+                        onChange={e=>onLoadChange(l.id,'loadKind',e.target.value as Load['loadKind'])}
+                        title="ELA 운전 유형">
+                        <option value="continuous">연속</option>
+                        <option value="intermittent">간헐</option>
+                        <option value="standby">대기</option>
+                        <option value="emergency">비상</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="number" value={l.quantity??1} min={1} step={1}
+                        onChange={e=>onLoadChange(l.id,'quantity',Math.max(1, +e.target.value||1))}
+                        title="동일 장비 수량"/>
+                    </td>
+                    <td>
+                      <input type="number" value={l.startingMultiplier??1} min={1} max={10} step={0.1}
+                        onChange={e=>onLoadChange(l.id,'startingMultiplier',+e.target.value||1)}
+                        title="기동전류 배수 (Motor Starting 검토용)"/>
                     </td>
                     {/* ── 수요율: 항해 / 출입항 / 하역 / 정박 / 비상 ─────── */}
                     <td>
@@ -1282,6 +1406,17 @@ export default function ProjectPage() {
                           <option key={priority.value} value={priority.value}>{priority.label}</option>
                         ))}
                       </select>
+                    </td>
+                    <td style={{textAlign:'center'}}>
+                      <input type="checkbox" checked={l.isSheddable||false}
+                        onChange={e=>onLoadChange(l.id,'isSheddable',e.target.checked)}
+                        title="Load Shedding 대상"/>
+                    </td>
+                    <td>
+                      <input type="number" value={l.shedPriority??0} min={0} max={9} step={1}
+                        onChange={e=>onLoadChange(l.id,'shedPriority',+e.target.value||0)}
+                        style={{textAlign:'center'}}
+                        title="차단 우선순위 (0=미지정, 1~9)"/>
                     </td>
                     <td style={{textAlign:'center'}}>
                       <input type="checkbox" checked={l.isEmergency}

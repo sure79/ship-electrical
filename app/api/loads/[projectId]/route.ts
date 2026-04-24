@@ -18,7 +18,13 @@ function mapLoad(l: Record<string,unknown>) {
     dfHarbor:  l.df_harbor ==null ? null : Number(l.df_harbor),
     phase:l.phase, isEmergency:Boolean(l.is_emergency), isBattery:Boolean(l.is_battery),
     cableLength:Number(l.cable_length)||0,
-    location:l.location, notes:l.notes, sortOrder:Number(l.sort_order)
+    location:l.location, notes:l.notes, sortOrder:Number(l.sort_order),
+    // ELA 확장
+    loadKind: String(l.load_kind || 'continuous'),
+    quantity: Number(l.quantity) || 1,
+    startingMultiplier: Number(l.starting_multiplier) || 1,
+    isSheddable: Boolean(l.is_sheddable),
+    shedPriority: Number(l.shed_priority) || 0,
   }
 }
 
@@ -48,8 +54,9 @@ export async function POST(req:Request, {params}:Ctx) {
            (id,project_id,circuit_no,name,from_bus,to_tag,
             kw,pf,efficiency,priority,start_type,demand_factor,df_sea,df_work,df_emg,
             df_arrival,df_harbor,
-            phase,is_emergency,is_battery,cable_length,location,notes,sort_order)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+            phase,is_emergency,is_battery,cable_length,location,notes,sort_order,
+            load_kind,quantity,starting_multiplier,is_sheddable,shed_priority)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       args:[
         id,params.projectId,String(ld.circuitNo||''),String(ld.name||''),String(ld.fromBus||'MSB'),String(ld.toTag||''),
         Number(ld.kw)||0,Number(ld.pf)||0.85,Number(ld.efficiency)||0.88,String(ld.priority||'IMPORTANT'),
@@ -61,7 +68,12 @@ export async function POST(req:Request, {params}:Ctx) {
         String(ld.phase||'3P'),
         ld.isEmergency?1:0, ld.isBattery?1:0,
         Number(ld.cableLength)||0,
-        String(ld.location||''),String(ld.notes||''),ord
+        String(ld.location||''),String(ld.notes||''),ord,
+        String(ld.loadKind||'continuous'),
+        Number(ld.quantity)||1,
+        Number(ld.startingMultiplier)||1,
+        ld.isSheddable?1:0,
+        Number(ld.shedPriority)||0,
       ]
     })
     return id
