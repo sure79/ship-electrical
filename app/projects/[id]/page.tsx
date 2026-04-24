@@ -744,11 +744,11 @@ export default function ProjectPage() {
 
     <div className="page">
       {/* ── 탭바 ── */}
-      <div className="tabs">
+      <div className="tabs" style={{flexWrap:'wrap'}}>
         {[
-          ['⚙️ 계통 설정','시스템·버스'],
+          ['⚙️ 프로젝트/발전기','선박·발전기·버스·운전조건'],
           ['📋 부하 입력',`${loads.length}개`],
-          ['📊 계산 결과',r?'완료':'미실행'],
+          ['📊 기본 계산',r?'완료':'미실행'],
           ['🔋 통합 전력',r?'관제':'대기'],
           ['⚡ 전기 해석',r?'분석':'안내'],
           ['🗺️ SLD 생성',sldXml?'준비됨':'미생성'],
@@ -757,6 +757,17 @@ export default function ProjectPage() {
             {t}<span className="tab-badge">{b}</span>
           </button>
         ))}
+        {/* ELA 전용 네비게이션 — 외부 페이지 이동 */}
+        <a className="tab" href={`/projects/${id}/report`} target="_blank" rel="noreferrer"
+          style={{background:'#1B5E20',color:'#fff',border:'1px solid #1B5E20'}}
+          title="IACS 방식 ELA · N-1 · Load Shedding · Motor Starting">
+          ⚓ ELA 보고서<span className="tab-badge" style={{background:'#2E7D32',color:'#fff'}}>열기 ↗</span>
+        </a>
+        <a className="tab" href={`/projects/${id}/sld`} target="_blank" rel="noreferrer"
+          style={{background:'#00838F',color:'#fff',border:'1px solid #00838F'}}
+          title="웹 SVG 단선결선도 뷰어 (Zoom/Pan/인쇄)">
+          🗺️ SLD 뷰어<span className="tab-badge" style={{background:'#00695C',color:'#fff'}}>열기 ↗</span>
+        </a>
       </div>
 
       {/* ════════════════════════════════════

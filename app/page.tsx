@@ -276,6 +276,56 @@ export default function Dashboard() {
     if(data.id) router.push(`/projects/${data.id}`)
   }
 
+  const [creatingSample, setCreatingSample] = useState(false)
+  async function createElaSample() {
+    if(!confirm('케미컬탱커 4만톤급 ELA 샘플 프로젝트를 생성합니다.\n\n' +
+      '· 주발전기 625 kVA × 3대 (PF 0.8 = 500 kW/unit)\n' +
+      '· 비상발전기 156.25 kVA\n' +
+      '· 4가지 운전조건별 부하 약 25개 자동 입력\n' +
+      '· 생성 후 ELA 보고서 페이지로 이동합니다.\n\n진행할까요?'
+    )) return
+    setCreatingSample(true)
+    try {
+      const { getChemicalTankerSample } = await import('@/lib/sampleProjects')
+      const sample = getChemicalTankerSample()
+
+      // 1) 프로젝트 생성
+      const pRes = await fetch('/api/projects',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(sample.project),
+      })
+      const pData = await pRes.json()
+      if(!pData.id) throw new Error('프로젝트 생성 실패')
+      const projectId = pData.id
+
+      // 2) ELA 발전기/운전조건 설정 반영 (프로젝트 PUT)
+      await fetch(`/api/projects/${projectId}`,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ id: projectId, ...sample.project }),
+      })
+
+      // 3) 부하 일괄 등록
+      await fetch(`/api/loads/${projectId}?action=csv-import`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ loads: sample.loads }),
+      })
+
+      // 4) 계산 실행 (SLD 생성 포함)
+      await fetch(`/api/calculate/${projectId}`,{ method:'POST' })
+
+      // 5) 보고서 페이지로 이동
+      window.open(`/projects/${projectId}/report`, '_blank')
+      router.push(`/projects/${projectId}`)
+    } catch(err) {
+      alert('샘플 생성 오류: ' + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setCreatingSample(false)
+    }
+  }
+
   async function del(id:string) {
     await fetch(`/api/projects/${id}`,{method:'DELETE'})
     setDelId(null)
@@ -321,9 +371,16 @@ export default function Dashboard() {
       </div>
 
       {/* 프로젝트 목록 */}
-      <div style={{display:'flex',alignItems:'center',marginBottom:14}}>
+      <div style={{display:'flex',alignItems:'center',marginBottom:14,gap:8,flexWrap:'wrap'}}>
         <h2 style={{fontSize:15,fontWeight:800,color:'var(--text)'}}>📁 프로젝트 목록</h2>
-        <button className="btn bp bsm" style={{marginLeft:'auto'}} onClick={()=>setShowNew(true)}>+ 새 프로젝트</button>
+        <button className="btn bsm"
+          style={{marginLeft:'auto',background:'#1B5E20',color:'#fff',border:'none'}}
+          onClick={createElaSample}
+          disabled={creatingSample}
+          title="625kVA×3대 케미컬탱커 ELA 샘플 + 약 25개 부하 자동 생성 + 보고서 열기">
+          {creatingSample ? '생성 중...' : '⚓ 샘플 ELA 불러오기 (케미컬탱커)'}
+        </button>
+        <button className="btn bp bsm" onClick={()=>setShowNew(true)}>+ 새 프로젝트</button>
       </div>
 
       {loading ? (
