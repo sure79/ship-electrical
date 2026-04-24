@@ -89,7 +89,7 @@ export interface LoadBalanceReport {
 
 /* ── 시나리오별 수요율 선택 ──────────────────────
    전부 사용자 입력값에서 직접 가져옴. 휴리스틱 없음.
-   미입력(null)인 경우에만 명확히 정의된 기본값 사용.
+   미입력(null)인 경우에는 해당 운전조건을 0으로 계산한다.
 */
 interface AppliedDf {
   df: number
@@ -101,16 +101,13 @@ function applyScenario(load: Load, scenario: ScenarioKey): AppliedDf {
     case 'sea':
       return { df: load.dfSea ?? 0, userProvided: true }
     case 'arrival':
-      // 출입항: dfArrival 직접 입력이 있으면 그 값, 없으면 dfSea 폴백
       if (load.dfArrival != null) return { df: load.dfArrival, userProvided: true }
-      return { df: load.dfSea ?? 0, userProvided: false }
+      return { df: 0, userProvided: false }
     case 'cargo':
-      // 하역: dfWork 입력 (기존 컬럼)
-      return { df: load.dfWork ?? (load.dfSea ?? 0) * 0.6, userProvided: true }
+      return { df: load.dfWork ?? 0, userProvided: true }
     case 'harbor':
-      // 정박: dfHarbor 직접 입력이 있으면 그 값, 없으면 dfSea × 0.6 폴백
       if (load.dfHarbor != null) return { df: load.dfHarbor, userProvided: true }
-      return { df: (load.dfSea ?? 0) * 0.6, userProvided: false }
+      return { df: 0, userProvided: false }
   }
 }
 
@@ -331,8 +328,8 @@ export function generateLoadBalanceReport(
     risks.push({
       id: rid++,
       title: '시나리오 수요율 입력 부족',
-      description: `출입항 수요율 입력 ${arrivalCoverage.toFixed(1)}%, 정박 수요율 입력 ${harborCoverage.toFixed(1)}% — 절반 이상의 부하가 폴백값 사용 중`,
-      impact: '해당 시나리오 분석은 dfSea 기준으로 추정된 값 · 실제 운전과 차이 발생 가능',
+      description: `출입항 수요율 입력 ${arrivalCoverage.toFixed(1)}%, 정박 수요율 입력 ${harborCoverage.toFixed(1)}% — 절반 이상의 부하가 미입력 상태`,
+      impact: '미입력 부하는 해당 운전조건에서 0으로 계산되어 실제 운전 부하가 과소평가될 수 있음',
       severity: 'MEDIUM',
       severityLabel: '중',
       evidence: [

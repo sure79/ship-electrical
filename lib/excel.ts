@@ -195,7 +195,7 @@ export async function parseLoadFile(file: File): Promise<{ loads: ParsedLoad[]; 
       demandFactor: df,
       dfSea: df,
       dfArrival,
-      dfWork: record.dfWork != null && record.dfWork !== '' ? asNum(record.dfWork) : df * 0.6,
+      dfWork: record.dfWork != null && record.dfWork !== '' ? asNum(record.dfWork) : 0,
       dfHarbor,
       dfEmg: record.dfEmg != null && record.dfEmg !== '' ? asNum(record.dfEmg) : 0,
       isEmergency: asYN(record.isEmergency),

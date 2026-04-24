@@ -41,8 +41,10 @@ function mapLoad(l: Record<string,unknown>) {
     fromBus:l.from_bus, toTag:l.to_tag, kw:Number(l.kw), pf:Number(l.pf),
     efficiency:Number(l.efficiency), priority:String(l.priority||'IMPORTANT'), startType:l.start_type, demandFactor:Number(l.demand_factor),
     dfSea: l.df_sea!==undefined ? Number(l.df_sea) : Number(l.demand_factor),
-    dfWork:l.df_work!==undefined ? Number(l.df_work) : Number(l.demand_factor)*0.6,
-    dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : (Boolean(l.is_emergency)?Number(l.demand_factor):0),
+    dfArrival: l.df_arrival==null ? null : Number(l.df_arrival),
+    dfWork:l.df_work!==undefined ? Number(l.df_work) : 0,
+    dfHarbor: l.df_harbor==null ? null : Number(l.df_harbor),
+    dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : 0,
     phase:l.phase, isEmergency:Boolean(l.is_emergency), isBattery:Boolean(l.is_battery),
     cableLength:Number(l.cable_length)||0,
     location:l.location, notes:l.notes, sortOrder:Number(l.sort_order)

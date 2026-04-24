@@ -47,6 +47,23 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
     paperH: PAPER_H,
     margin: MARGIN,
   }
+  const busSummaryMap = new Map(r.busSummaries.map(summary => [summary.tag, summary]))
+  const coordinationMap = new Map(r.coordinationHints.map(hint => [hint.sourceTag, hint]))
+  const bindingModeLabel = r.modes.find(mode => mode.mode === r.bindingMode)?.label || r.bindingMode
+  const roundTo = (value:number, step:number) => Math.ceil(value / step) * step
+  const sourceBreakerA = (kva:number, pf = 0.8) => kva > 0
+    ? roundTo((kva * 1000) / (Math.sqrt(3) * p.acVoltage * pf) * 1.25, 50)
+    : 0
+  const shoreBreakerA = sourceBreakerA(r.shoreKva || r.totKvaAll || 0, 0.9)
+  const fcBreakerA = sourceBreakerA((r.fcStackKw || p.fcStackKw || 0) / 0.9, 0.9)
+  const pvBreakerA = p.pvKwp > 0 ? roundTo((p.pvKwp * 1000) / (Math.sqrt(3) * p.acVoltage) * 1.25, 10) : 0
+  const feederBreakerLabel = (tag:string) => {
+    const hint = coordinationMap.get(tag)
+    const summary = busSummaryMap.get(tag)
+    if(hint?.recommendedBreakerA) return `${hint.recommendedBreakerA}A`
+    if(summary?.currentA) return `${roundTo(summary.currentA * 1.25, summary.currentA >= 630 ? 100 : 25)}A`
+    return undefined
+  }
 
   /* ── 소스 배치 ────────────────────────── */
   const dgUnits = p.hasDg ? Math.max(1, p.dgCount || 1) : 0
@@ -164,12 +181,24 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
   const nodes: React.ReactElement[] = []
 
   /* — 시트 프레임 — */
+  const gridLines = (
+    <g key="grid" opacity={0.38}>
+      {Array.from({ length: 15 }, (_, i) => MARGIN + 80 + i * 100).map(x => (
+        <line key={`gx-${x}`} x1={x} y1={MARGIN + 44} x2={x} y2={PAPER_H - MARGIN - 4} stroke="#ECEFF1" strokeWidth={0.7} />
+      ))}
+      {Array.from({ length: 10 }, (_, i) => MARGIN + 70 + i * 100).map(y => (
+        <line key={`gy-${y}`} x1={MARGIN + 4} y1={y} x2={PAPER_W - MARGIN - 4} y2={y} stroke="#ECEFF1" strokeWidth={0.7} />
+      ))}
+    </g>
+  )
+
   const frame = (
     <g key="frame">
       <rect x={MARGIN} y={MARGIN} width={PAPER_W - MARGIN * 2} height={PAPER_H - MARGIN * 2}
         fill="#FFFFFF" stroke="#263238" strokeWidth={1.5} />
       <rect x={MARGIN + 4} y={MARGIN + 4} width={PAPER_W - MARGIN * 2 - 8} height={PAPER_H - MARGIN * 2 - 8}
         fill="none" stroke="#90A4AE" strokeWidth={0.5} />
+      {gridLines}
       {/* 도면 타이틀 상단 밴드 */}
       <rect x={MARGIN + 4} y={MARGIN + 4} width={PAPER_W - MARGIN * 2 - 8} height={36}
         fill="#263238" />
@@ -178,6 +207,9 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
       </text>
       <text x={PAPER_W - MARGIN - 14} y={MARGIN + 28} textAnchor="end" fontSize={10} fill="#B0BEC5">
         {dt}
+      </text>
+      <text x={MARGIN + 18} y={MARGIN + 28} fontSize={9} fontWeight={700} fill="#CFD8DC">
+        A3 / NTS / {bindingModeLabel}
       </text>
     </g>
   )
@@ -223,8 +255,8 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
     } else if (src.kind === 'shore') {
       nodes.push(
         <g key="shore">
-          <Shore x={src.x} y={110} subLabel={`AC ${p.acVoltage}V 3PH`} />
-          <MCCB x={src.x} y={185} label="MCCB-SH" subLabel="400/250A" />
+          <Shore x={src.x} y={110} subLabel={`${r.shoreKva || 0}kVA  ${p.acVoltage}V`} />
+          <MCCB x={src.x} y={185} label="MCCB-SH" subLabel={shoreBreakerA ? `${shoreBreakerA}A` : undefined} />
         </g>
       )
       wires.push(
@@ -244,7 +276,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
       nodes.push(
         <g key="fc">
           <Converter x={src.x} y={120} variant="dcac" label="FC STACK" subLabel={`${r.fcStackKw || 200}kW`} />
-          <MCCB x={src.x} y={185} label="MCCB-FC" />
+          <MCCB x={src.x} y={185} label="MCCB-FC" subLabel={fcBreakerA ? `${fcBreakerA}A` : undefined} />
         </g>
       )
       wires.push(
@@ -260,7 +292,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
           <text x={src.x} y={117} textAnchor="middle" fontSize={10} fontWeight={800} fill="#E65100">PV Array</text>
           <text x={src.x} y={128} textAnchor="middle" fontSize={8} fill={COLOR.muted}>{p.pvKwp}kWp</text>
           <Converter x={src.x} y={155} variant="dcac" label="PV-INV" />
-          <MCCB x={src.x} y={200} label="MCCB-PV" />
+          <MCCB x={src.x} y={200} label="MCCB-PV" subLabel={pvBreakerA ? `${pvBreakerA}A` : undefined} />
         </g>
       )
       wires.push(
@@ -296,6 +328,8 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
     const feederX = f.x + f.width / 2
     const busY = f.isEmg ? BUS_Y + 34 : BUS_Y
     const feederColor = f.isEmg ? COLOR.emg : COLOR.ac
+    const summary = busSummaryMap.get(f.tag)
+    const feederSubLabel = feederBreakerLabel(f.tag)
 
     // MSB 자체는 버스바에 이미 통합됐으니, MSB 피더는 직접 부하만 붙임
     const isMsb = f.tag === 'MSB'
@@ -310,7 +344,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
       )
       nodes.push(
         <g key={`mccb-${f.tag}`}>
-          <MCCB x={feederX} y={FEEDER_Y} label={`MCCB-${f.tag}`} emergency={f.isEmg} />
+          <MCCB x={feederX} y={FEEDER_Y} label={`MCCB-${f.tag}`} subLabel={feederSubLabel} emergency={f.isEmg} />
         </g>
       )
       wires.push(
@@ -324,7 +358,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
           w={f.width}
           h={46}
           label={f.panelLabel}
-          subLabel={`${f.loads.length} circuits`}
+          subLabel={summary ? `${summary.demandKva.toFixed(1)}kVA / ${summary.currentA.toFixed(1)}A / ${f.loads.length} circuits` : `${f.loads.length} circuits`}
           emergency={f.isEmg}
         />
       )
@@ -368,7 +402,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
         ld.circuitNo || '—',
         shortName,
         `${ld.kw}kW  ${ld.pf}pf`,
-        ld.cableCode,
+        `${ld.cableCode}  ${ld.currentA.toFixed(1)}A`,
       ]
       nodes.push(
         <LoadBox key={`box-${ld.id}`} x={cx - 60} y={loadY + 82} w={120} h={50} lines={lines} emergency={emg} />
@@ -470,6 +504,25 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
     </g>
   )
 
+  const basisNode = (
+    <g key="basis">
+      <rect x={MARGIN + 16} y={PAPER_H - MARGIN - 118} width={520} height={104} fill="#FFFFFF" stroke="#90A4AE" strokeWidth={0.8} rx={2} />
+      <rect x={MARGIN + 16} y={PAPER_H - MARGIN - 118} width={520} height={20} fill="#ECEFF1" stroke="#90A4AE" strokeWidth={0.8} />
+      <text x={MARGIN + 26} y={PAPER_H - MARGIN - 104} fontSize={10} fontWeight={800} fill={COLOR.frame}>DESIGN BASIS / CALCULATION SUMMARY</text>
+      {[
+        `Binding mode: ${bindingModeLabel}`,
+        `DG: ${p.dgCount} x ${r.selKva}kVA (${r.selKw}kW), ACB ${r.genAcbA}A`,
+        `Load: ${r.totKwAll.toFixed(1)}kW / ${r.totKvaAll.toFixed(1)}kVA, PF ${r.avgPfAll.toFixed(2)}`,
+        `Isc: ${r.iscBusKa.toFixed(1)}kA, required breaking ${r.requiredBreakingKa}kA`,
+        `Worst start: ${r.worstStartMotor || '-'} / dip ${r.voltageDipPct.toFixed(1)}%`,
+      ].map((line, i) => (
+        <text key={line} x={MARGIN + 28} y={PAPER_H - MARGIN - 82 + i * 15} fontSize={9} fill={COLOR.ink}>
+          {line}
+        </text>
+      ))}
+    </g>
+  )
+
   /* ── 최종 SVG 반환 ────────────────────────── */
   return (
     <svg
@@ -483,6 +536,7 @@ export default function SldSvg({ project: p, result: r, buses, dt, svgRef }: Pro
       {wires}
       {nodes}
       {legendNode}
+      {basisNode}
       <TitleBlock x={TITLE_BLOCK_X} y={TITLE_BLOCK_Y} w={TITLE_BLOCK_W} h={TITLE_BLOCK_H} meta={meta} />
     </svg>
   )

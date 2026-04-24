@@ -121,7 +121,7 @@ export async function initDb() {
     `ALTER TABLE loads ADD COLUMN df_sea REAL NOT NULL DEFAULT 0.8`,
     `ALTER TABLE loads ADD COLUMN df_work REAL NOT NULL DEFAULT 0.5`,
     `ALTER TABLE loads ADD COLUMN df_emg REAL NOT NULL DEFAULT 0.0`,
-    // 4-scenario report: NULL 허용 → 미입력 시 dfSea 또는 계산식 폴백
+    // 4-scenario report: NULL 허용 → 미입력 시 해당 모드는 0으로 계산
     `ALTER TABLE loads ADD COLUMN df_arrival REAL`,
     `ALTER TABLE loads ADD COLUMN df_harbor REAL`,
     `ALTER TABLE loads ADD COLUMN cable_length REAL NOT NULL DEFAULT 0`,

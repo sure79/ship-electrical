@@ -130,6 +130,31 @@ function uniq<T>(arr:T[]): T[] {
   return Array.from(new Set(arr))
 }
 
+function getLoadSourceBus(load: Load, loads: Load[], busMap: Map<string, Bus>): Bus | undefined {
+  let cursor = load.fromBus || 'MSB'
+  const seen = new Set<string>()
+  const byToTag = new Map(loads.filter(l=>l.toTag).map(l=>[l.toTag, l]))
+
+  while(cursor && !seen.has(cursor)) {
+    seen.add(cursor)
+    const bus = busMap.get(cursor)
+    if(bus) return bus
+    const upstream = byToTag.get(cursor)
+    if(!upstream) break
+    cursor = upstream.fromBus
+  }
+
+  return busMap.get('MSB')
+}
+
+function modeDemandFactor(load: Load, mode: OperatingMode): number {
+  if(mode==='SEA') return load.dfSea ?? 0
+  if(mode==='ARRIVAL') return load.dfArrival ?? 0
+  if(mode==='WORK') return load.dfWork ?? 0
+  if(mode==='HARBOR') return load.dfHarbor ?? 0
+  return load.dfEmg ?? 0
+}
+
 function getExpandedBusList(p:Project, buses:Bus[], loads:Load[]): Bus[] {
   const busMap = new Map<string, Bus>()
   const addBus = (bus:Bus) => {
@@ -683,21 +708,28 @@ function buildArchitectureRecommendations(args:{
 /* ─── 운전 모드별 부하 계산 ─── */
 function calcLoadsByMode(
   p:Project, loads:Load[], mode:OperatingMode,
-  warns:Warning[], iscBusKa:number
+  warns:Warning[], iscBusKa:number, buses:Bus[]
 ): {lc:LoadCalc[]; modeResult:ModeResult} {
-  const label = {SEA:'항해 모드',WORK:'작업 모드',EMG:'비상 모드'}[mode]
+  const label = {
+    SEA:'항해 모드',
+    ARRIVAL:'출입항 모드',
+    WORK:'하역 모드',
+    HARBOR:'정박 모드',
+    EMG:'비상 모드',
+  }[mode]
   const modeLabel = label
+  const busMap = new Map(buses.map(bus=>[bus.tag, bus]))
 
   const lc: LoadCalc[] = loads.map(ld=>{
-    // 모드별 수요율 선택
-    const df = mode==='SEA' ? (ld.dfSea??ld.demandFactor)
-             : mode==='WORK' ? (ld.dfWork??ld.demandFactor)
-             : (ld.dfEmg ?? (ld.isEmergency ? ld.demandFactor : 0))
+    const df = modeDemandFactor(ld, mode)
+    const sourceBus = getLoadSourceBus(ld, loads, busMap)
+    const loadVoltage = sourceBus?.voltage || p.acVoltage
+    const loadPhase = sourceBus?.type==='DC-BUS' ? '1P' : ld.phase
 
     const kvaConn   = ld.pf>0 ? ld.kw/ld.pf : 0
     const kwDemand  = ld.kw*df
     const kvaDemand = ld.pf>0 ? kwDemand/ld.pf : 0
-    const currentA  = calcCurrent(ld.kw, ld.pf, ld.efficiency, ld.phase, p.acVoltage)
+    const currentA  = calcCurrent(ld.kw, ld.pf, ld.efficiency, loadPhase, loadVoltage)
 
     // 기동 kVA
     const startFactor = START_FACTOR[ld.startType]??1.0
@@ -709,13 +741,13 @@ function calcLoadsByMode(
 
     // 케이블
     const {size:cableSize, amp:cableAmpacity, code:cableCode, r:cableR} =
-      selectCable(currentA, ld.isEmergency, ld.phase)
+      selectCable(currentA, ld.isEmergency, loadPhase)
     const cableMarginPct = currentA>0 ? Math.round((cableAmpacity/currentA-1)*100) : 999
     const mccbOk = mccbSet<=cableAmpacity
 
     // 전압 강하
     const voltageDrop = calcVoltageDrop(
-      currentA, ld.pf, ld.cableLength||0, ld.phase, p.acVoltage, cableR
+      currentA, ld.pf, ld.cableLength||0, loadPhase, loadVoltage, cableR
     )
     const voltageDropOk = ld.cableLength>0 ? voltageDrop<=5.0 : true
 
@@ -768,7 +800,7 @@ function calcLoadsByMode(
   const selKw   = selKva ? Math.round(selKva*(p.dgPf||0.8)) : 0
   const genAcbA = selKva ? selectAcb((selKva*1000)/(SQRT3*p.acVoltage)) : 0
   const loadFactorPct = selKw*dgCount>0
-    ? Math.min(99, Math.round(totKwAll/(selKw*dgCount)*100)) : 0
+    ? Math.round(totKwAll/(selKw*dgCount)*100) : 0
 
   const modeResult: ModeResult = {
     mode, label:modeLabel,
@@ -813,13 +845,20 @@ export function runCalculation(p:Project, loads:Load[], buses:Bus[] = []): CalcR
   }
   iscBusKa = Math.max(iscBusKa, 6)  // 최소 6kA
 
-  // ── 3개 운전 모드 계산 ──
-  const MODES: OperatingMode[] = ['SEA','WORK','EMG']
-  const modeResults: ModeResult[] = []
-  const seaLoads = calcLoadsByMode(p, loads, 'SEA', warns, iscBusKa)
-  const workLoads = calcLoadsByMode(p, loads, 'WORK', warns, iscBusKa)
-  const emgLoadsCalc = calcLoadsByMode(p, loads, 'EMG', warns, iscBusKa)
-  modeResults.push(seaLoads.modeResult, workLoads.modeResult, emgLoadsCalc.modeResult)
+  const missingManualDf = loads.filter(load=>load.dfArrival==null || load.dfHarbor==null)
+  if(missingManualDf.length>0) {
+    warns.push({
+      type:'WARN',
+      code:'DF_MANUAL_MISSING',
+      message:`출입항/정박 수요율이 비어 있는 부하 ${missingManualDf.length}개는 해당 모드에서 0으로 계산됩니다. 각 운전조건 수요율을 직접 입력하세요.`,
+    })
+  }
+
+  // ── 5개 운전 모드 계산: 항해 / 출입항 / 하역 / 정박 / 비상 ──
+  const MODES: OperatingMode[] = ['SEA','ARRIVAL','WORK','HARBOR','EMG']
+  const modeCalcs = MODES.map(mode=>calcLoadsByMode(p, loads, mode, warns, iscBusKa, expandedBuses))
+  const modeResults: ModeResult[] = modeCalcs.map(calc=>calc.modeResult)
+  const seaLoads = modeCalcs.find(calc=>calc.modeResult.mode==='SEA') || modeCalcs[0]
 
   // 항해 모드 기준으로 상세 LoadCalc 사용
   const lc = seaLoads.lc
@@ -1062,6 +1101,8 @@ export function runCalculation(p:Project, loads:Load[], buses:Bus[] = []): CalcR
   })
 
   const seaMR = seaLoads.modeResult
+  const totKwConn = lc.reduce((sum, load)=>sum+load.kw, 0)
+  const totKvaConn = lc.reduce((sum, load)=>sum+load.kvaConn, 0)
 
   return {
     loads: lc,
@@ -1095,7 +1136,7 @@ export function runCalculation(p:Project, loads:Load[], buses:Bus[] = []): CalcR
     // 추진
     propKwIn, propKvaIn,
     // 공통 합계 (항해 모드)
-    totKwConn: seaMR.totKwDemand, totKvaConn: seaMR.totKvaDemand,
+    totKwConn, totKvaConn,
     totKwDemand: seaMR.totKwDemand, totKvaDemand: seaMR.totKvaDemand,
     avgPf: seaMR.avgPf,
     totKwAll: seaMR.totKwAll, totKvaAll: seaMR.totKvaAll, avgPfAll: seaMR.avgPf,

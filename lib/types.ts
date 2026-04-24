@@ -3,7 +3,7 @@
    기준: KR 선급 Pt.4 / IEC 60092 / SOLAS
 ═══════════════════════════════════════════ */
 
-export type OperatingMode = 'SEA' | 'WORK' | 'EMG'
+export type OperatingMode = 'SEA' | 'ARRIVAL' | 'WORK' | 'HARBOR' | 'EMG'
 export type LoadPriority = 'ESSENTIAL' | 'IMPORTANT' | 'NON_ESSENTIAL'
 
 export interface Project {
@@ -163,7 +163,7 @@ export interface CalcResult {
   architectureRecommendations: ArchitectureRecommendation[]
 
   // ── 3모드 계산 결과 ──
-  modes: ModeResult[]          // [SEA, WORK, EMG]
+  modes: ModeResult[]          // [SEA, ARRIVAL, WORK, HARBOR, EMG]
   bindingMode: OperatingMode   // 발전기 결정 모드 (최대 kVA 모드)
 
   // ── 최종 발전기 선정 (binding mode 기준) ──

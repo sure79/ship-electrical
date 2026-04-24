@@ -32,35 +32,6 @@ function suggestStartType(kw: number, name?: string): Load['startType'] {
   return 'VFD'                    // >200kW: VFD 권장
 }
 
-function classifyLoadKind(name: string) {
-  const txt = name.toLowerCase()
-  if (/fas|ncp|nav|communication|emergency|비상|항해|통신|fire|detect|조명|light/.test(txt)) return 'essential'
-  if (/hydro|boom|cargo|winch|deck|crane|work/.test(txt)) return 'work'
-  if (/pump|compressor|fan|hvac/.test(txt)) return 'machinery'
-  return 'general'
-}
-
-function getScenarioFactors(load: Load, scenario: 'harbor'|'maneuvering'|'cargo') {
-  const kind = classifyLoadKind(load.name)
-  const emg = load.isEmergency ? Math.max(load.dfEmg || 0, 1) : 0
-  if (scenario === 'harbor') {
-    if (kind === 'essential') return { dfSea: 0.9, dfWork: 0.8, dfEmg: emg }
-    if (kind === 'work') return { dfSea: 0.1, dfWork: 0.3, dfEmg: emg }
-    if (kind === 'machinery') return { dfSea: 0.35, dfWork: 0.45, dfEmg: emg }
-    return { dfSea: 0.45, dfWork: 0.5, dfEmg: emg }
-  }
-  if (scenario === 'maneuvering') {
-    if (kind === 'essential') return { dfSea: 1.0, dfWork: 0.9, dfEmg: emg }
-    if (kind === 'work') return { dfSea: 0.25, dfWork: 0.5, dfEmg: emg }
-    if (kind === 'machinery') return { dfSea: 0.6, dfWork: 0.65, dfEmg: emg }
-    return { dfSea: 0.55, dfWork: 0.6, dfEmg: emg }
-  }
-  if (kind === 'essential') return { dfSea: 0.85, dfWork: 1.0, dfEmg: emg }
-  if (kind === 'work') return { dfSea: 0.2, dfWork: 1.0, dfEmg: emg }
-  if (kind === 'machinery') return { dfSea: 0.5, dfWork: 0.75, dfEmg: emg }
-  return { dfSea: 0.55, dfWork: 0.7, dfEmg: emg }
-}
-
 const SAMPLE_LOADS: Omit<Load,'id'|'projectId'>[] = [
   {circuitNo:'P01',name:'Fire & G/S Pump',fromBus:'MSB',toTag:'P-001',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.5,dfSea:0.5,dfWork:0.3,dfArrival:null,dfHarbor:null,dfEmg:0.5,phase:'3P',isEmergency:true,isBattery:false,cableLength:25,location:'Engine Room',notes:'비상겸용',sortOrder:1},
   {circuitNo:'P02',name:'Fire & Bilge Pump',fromBus:'MSB',toTag:'P-002',kw:5.5,pf:0.85,efficiency:0.90,priority:'ESSENTIAL',startType:'DOL',demandFactor:0.3,dfSea:0.3,dfWork:0.2,dfArrival:null,dfHarbor:null,dfEmg:0.3,phase:'3P',isEmergency:true,isBattery:false,cableLength:30,location:'Engine Room',notes:'비상겸용',sortOrder:2},
@@ -411,7 +382,7 @@ export default function ProjectPage() {
       name:'신규 부하',fromBus,toTag:'',
       kw:1.0,pf:0.85,efficiency:0.90,priority:'IMPORTANT' as Load['priority'],
       startType:'DOL' as Load['startType'],demandFactor:df,
-      dfSea:df, dfArrival: df, dfWork:df*0.6, dfHarbor: df*0.5, dfEmg:0,
+      dfSea:df, dfArrival: null, dfWork:0, dfHarbor: null, dfEmg:0,
       phase:'3P' as Load['phase'],
       isEmergency:false,isBattery:false,cableLength:0,location:'',notes:'',
       sortOrder:loads.length+1
@@ -509,28 +480,6 @@ export default function ProjectPage() {
     if (created.length>0) setLoads(prev=>[...prev, ...created])
   }
 
-  async function applyScenarioPreset(scenario:'harbor'|'maneuvering'|'cargo') {
-    const title = scenario==='harbor' ? '항내' : scenario==='maneuvering' ? '출입항' : '화물작업'
-    if(!confirm(`${title} 시나리오 프리셋을 현재 부하 수요율에 적용할까요?`)) return
-    const nextLoads = loads.map(load=>{
-      const factors = getScenarioFactors(load, scenario)
-      return {...load, ...factors, demandFactor:factors.dfSea}
-    })
-    setLoads(nextLoads)
-    setSaveState('saving')
-    try {
-      await Promise.all(nextLoads.map(load=>fetch(`/api/loads/${id}/${load.id}`,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(load),
-      })))
-      setSaveState('saved')
-    } catch {
-      setSaveState('error')
-    }
-    setTimeout(()=>setSaveState('idle'),1500)
-  }
-
   async function deleteBus(busId:string) {
     await fetch(`/api/buses/${id}/${busId}`,{method:'DELETE'})
     setBuses(prev=>prev.filter(b=>b.id!==busId))
@@ -563,11 +512,11 @@ export default function ProjectPage() {
   }
 
   function exportCsv() {
-    const hdr = 'CircuitNo,Name,FromBus,ToTag,kW,PF,Eff,Priority,StartType,DFsea,DFwork,DFemg,Phase,Emergency,Battery,CableLen,Location,Notes'
+    const hdr = 'CircuitNo,Name,FromBus,ToTag,kW,PF,Eff,Priority,StartType,DFsea,DFarrival,DFwork,DFharbor,DFemg,Phase,Emergency,Battery,CableLen,Location,Notes'
     const rows = loads.map(l=>[
       l.circuitNo,l.name,l.fromBus,l.toTag,
       l.kw,l.pf,l.efficiency,l.priority,l.startType,
-      l.dfSea??l.demandFactor,l.dfWork??l.demandFactor,l.dfEmg??0,
+      l.dfSea??l.demandFactor,l.dfArrival??'',l.dfWork??0,l.dfHarbor??'',l.dfEmg??0,
       l.phase,l.isEmergency?'Y':'N',l.isBattery?'Y':'N',
       l.cableLength,l.location,l.notes
     ].join(','))
@@ -752,7 +701,7 @@ export default function ProjectPage() {
   ].filter(Boolean)
 
   /* ── 바인딩 모드 라벨 ── */
-  const modeLabelMap: Record<string,string> = {SEA:'항해',WORK:'작업',EMG:'비상'}
+  const modeLabelMap: Record<string,string> = {SEA:'항해',ARRIVAL:'출입항',WORK:'하역',HARBOR:'정박',EMG:'비상'}
 
   return (
     <>
@@ -1194,9 +1143,6 @@ export default function ProjectPage() {
             </label>
           </div>
           <button className="btn bg2 bsm" onClick={exportCsv}>⬇ CSV</button>
-          <button className="btn bsm" style={{background:'#f0f4ff',color:'#1565c0',border:'1px solid #90caf9'}} onClick={()=>applyScenarioPreset('harbor')}>항내 프리셋</button>
-          <button className="btn bsm" style={{background:'#f0f4ff',color:'#1565c0',border:'1px solid #90caf9'}} onClick={()=>applyScenarioPreset('maneuvering')}>출입항 프리셋</button>
-          <button className="btn bsm" style={{background:'#f0f4ff',color:'#1565c0',border:'1px solid #90caf9'}} onClick={()=>applyScenarioPreset('cargo')}>화물작업 프리셋</button>
           <div style={{marginLeft:'auto',fontSize:11,color:'var(--gray)'}}>
             총 {loads.length}개 | 비상 {emgLoads.length}개 | 배터리 {loads.filter(l=>l.isBattery).length}개 | 자동저장
           </div>
@@ -1204,7 +1150,7 @@ export default function ProjectPage() {
 
         <div className="sbar info" style={{marginBottom:10,padding:'8px 12px'}}>
           <b>전원출처</b>: 버스 태그(MSB, ESB…) 또는 중간장비 태그 · 자동완성 지원 |
-          <b> 5가지 수요율</b>: 항해/출입항/하역/정박/비상 (0~1) — <b>출입항·정박은 빈칸이면 항해값으로 폴백</b>, 직접 입력 시 Electric Load Balance 보고서 정확도↑ |
+          <b> 5가지 수요율</b>: 항해/출입항/하역/정박/비상 (0~1) — 모든 값은 독립 수동 입력이며 빈칸은 해당 모드 0으로 계산 |
           <b>우선순위</b>: N-1 자동 부하차단 계획에 반영 |
           <b>비상체크</b>: 비상발전기 산정 포함 · 내화케이블(FD) 자동 적용 |
           <b>배터리체크</b>: ESS/배터리 공급 분류 및 ESS 운전용량 산정
@@ -1229,10 +1175,10 @@ export default function ProjectPage() {
                   <th style={{width:42}}>역률</th>
                   <th style={{width:42}}>효율</th>
                   <th style={{width:56}}>기동방식</th>
-                  <th style={{width:46}} title="정상 항해 수요율 (기준값). ▼ 상세로 4가지 시나리오 + 비상 편집">항해</th>
-                  <th style={{width:44}} title="출입항 수요율 (0~1) — 비워두면 항해값으로 폴백. 보고서 정확도↑ 위해 직접 입력 권장">출입항</th>
+                  <th style={{width:46}} title="정상 항해 수요율">항해</th>
+                  <th style={{width:44}} title="출입항 수요율 (0~1) — 직접 입력, 빈칸은 0으로 계산">출입항</th>
                   <th style={{width:44}} title="하역 수요율 (0~1) — Cargo Handling 모드">하역</th>
-                  <th style={{width:44}} title="정박 수요율 (0~1) — 비워두면 항해×0.6 폴백. 직접 입력 권장">정박</th>
+                  <th style={{width:44}} title="정박 수요율 (0~1) — 직접 입력, 빈칸은 0으로 계산">정박</th>
                   <th style={{width:40}} title="비상 수요율 (SOLAS 모드)">비상</th>
                   <th style={{width:40}}>위상</th>
                   <th style={{width:58}} title="자동 부하차단 우선순위">우선순위</th>
@@ -1297,10 +1243,10 @@ export default function ProjectPage() {
                       <input type="number"
                         value={l.dfArrival ?? ''}
                         min={0} max={1} step={0.05}
-                        placeholder={(l.dfSea??l.demandFactor).toFixed(2)}
+                        placeholder="직접 입력"
                         onChange={e=>onLoadChange(l.id,'dfArrival', e.target.value==='' ? null : +e.target.value)}
                         style={{color:l.dfArrival==null?'var(--gray)':'#6a1b9a',fontStyle:l.dfArrival==null?'italic':'normal'}}
-                        title={l.dfArrival==null ? '미입력 — 항해값으로 폴백 (직접 입력 권장)' : '출입항 수요율'}/>
+                        title={l.dfArrival==null ? '미입력 — 자동 계산하지 않음' : '출입항 수요율'}/>
                     </td>
                     <td>
                       <input type="number" value={l.dfWork??0} min={0} max={1} step={0.05}
@@ -1312,10 +1258,10 @@ export default function ProjectPage() {
                       <input type="number"
                         value={l.dfHarbor ?? ''}
                         min={0} max={1} step={0.05}
-                        placeholder={((l.dfSea??l.demandFactor)*0.6).toFixed(2)}
+                        placeholder="직접 입력"
                         onChange={e=>onLoadChange(l.id,'dfHarbor', e.target.value==='' ? null : +e.target.value)}
                         style={{color:l.dfHarbor==null?'var(--gray)':'var(--green)',fontStyle:l.dfHarbor==null?'italic':'normal'}}
-                        title={l.dfHarbor==null ? '미입력 — 항해×0.6 폴백 (직접 입력 권장)' : '정박 수요율'}/>
+                        title={l.dfHarbor==null ? '미입력 — 자동 계산하지 않음' : '정박 수요율'}/>
                     </td>
                     <td>
                       <input type="number" value={l.dfEmg??0} min={0} max={1} step={0.05}
@@ -1399,7 +1345,7 @@ export default function ProjectPage() {
           {/* ── 3모드 비교 테이블 ── */}
           {r.modes&&r.modes.length>0&&(
             <div className="card">
-              <div className="card-title">📊 운전 모드별 계산 결과 (3-Mode Comparison)</div>
+              <div className="card-title">📊 운전 모드별 계산 결과 (5-Mode Comparison)</div>
               <div className="tw">
                 <table>
                   <thead>
@@ -1407,9 +1353,9 @@ export default function ProjectPage() {
                       <th>항목</th>
                       {r.modes.map((m:ModeResult)=>(
                         <th key={m.mode} style={{
-                          background:m.mode==='SEA'?'#1565c0':m.mode==='WORK'?'#2e7d32':'#c62828'
+                          background:m.mode==='SEA'?'#1565c0':m.mode==='ARRIVAL'?'#6a1b9a':m.mode==='WORK'?'#e65100':m.mode==='HARBOR'?'#2e7d32':'#c62828'
                         }}>
-                          {m.mode==='SEA'?'⚓ 항해(SEA)':m.mode==='WORK'?'🔧 작업(WORK)':'🆘 비상(EMG)'}
+                          {m.mode==='SEA'?'⚓ 항해(SEA)':m.mode==='ARRIVAL'?'↔ 출입항(ARRIVAL)':m.mode==='WORK'?'⚙ 하역(WORK)':m.mode==='HARBOR'?'⚑ 정박(HARBOR)':'🆘 비상(EMG)'}
                           {r.bindingMode===m.mode&&<span style={{display:'block',fontSize:10}}>★ 결정모드</span>}
                         </th>
                       ))}
@@ -1790,7 +1736,7 @@ export default function ProjectPage() {
               <div style={{flex:1}}>
                 <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Electric Load Balance 운영성 검토 보고서</div>
                 <div style={{fontSize:11.5,opacity:0.9,lineHeight:1.5}}>
-                  4가지 운전조건(정상 항해/출입항/하역/정박 정박)별 요구전력·부하율·리스크 자동 분석
+                  5가지 운전조건(항해/출입항/하역/정박/비상)별 요구전력·부하율·리스크 분석
                   <br/>케미컬탱커 ELA 보고서 포맷 · 인쇄/PDF 출력 가능
                 </div>
               </div>

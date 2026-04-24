@@ -11,9 +11,9 @@ function mapLoad(l: Record<string,unknown>) {
     fromBus:l.from_bus, toTag:l.to_tag, kw:Number(l.kw), pf:Number(l.pf),
     efficiency:Number(l.efficiency), priority:String(l.priority||'IMPORTANT'), startType:l.start_type, demandFactor:Number(l.demand_factor),
     dfSea: l.df_sea!==undefined ? Number(l.df_sea) : Number(l.demand_factor),
-    dfWork:l.df_work!==undefined ? Number(l.df_work) : Number(l.demand_factor)*0.6,
-    dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : (Boolean(l.is_emergency)?Number(l.demand_factor):0),
-    // 4-scenario: NULL이면 미입력 표시 (클라이언트에서 자동 계산된 기본값 사용)
+    dfWork:l.df_work!==undefined ? Number(l.df_work) : 0,
+    dfEmg: l.df_emg!==undefined ? Number(l.df_emg) : 0,
+    // 4-scenario: NULL이면 미입력 표시, 계산 시 해당 모드는 0으로 처리
     dfArrival: l.df_arrival==null ? null : Number(l.df_arrival),
     dfHarbor:  l.df_harbor ==null ? null : Number(l.df_harbor),
     phase:l.phase, isEmergency:Boolean(l.is_emergency), isBattery:Boolean(l.is_battery),
@@ -55,8 +55,8 @@ export async function POST(req:Request, {params}:Ctx) {
         Number(ld.kw)||0,Number(ld.pf)||0.85,Number(ld.efficiency)||0.88,String(ld.priority||'IMPORTANT'),
         String(ld.startType||'DOL'),df,
         ld.dfSea!==undefined?Number(ld.dfSea):df,
-        ld.dfWork!==undefined?Number(ld.dfWork):df*0.6,
-        ld.dfEmg!==undefined?Number(ld.dfEmg):(ld.isEmergency?df:0),
+        ld.dfWork!==undefined?Number(ld.dfWork):0,
+        ld.dfEmg!==undefined?Number(ld.dfEmg):0,
         dfArrival, dfHarbor,
         String(ld.phase||'3P'),
         ld.isEmergency?1:0, ld.isBattery?1:0,
